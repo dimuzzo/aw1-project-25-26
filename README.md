@@ -4,12 +4,12 @@
 
 ## Route dell'applicazione React
 
-- Route `/`: homepage con una schermata "Seleziona la modalità" che mostra sempre due pulsanti, Casual e Torneo. Cliccando Casual senza essere autenticati si avvia il flusso di gioco (selezione difficoltà, poi griglia). Se l'utente è già loggato, compare un messaggio inline che chiede di fare prima il logout. Invece, cliccando Torneo da autenticati si viene portati all'hub dei tornei. Se non si è loggati, compare un messaggio inline che chiede di fare il login, con un pulsante Login sotto. La navbar mostra sempre un pulsante Login in alto a destra quando non si è autenticati, sostituito da un pulsante Logout dopo il login. Il pulsante Statistiche compare in alto a sinistra solo quando si è autenticati.
+- Route `/`: homepage con tre pulsanti, Casual, Torneo e Login. Cliccando Casual (accessibile solo agli utenti non autenticati) compare un selettore di difficoltà. Dopo la scelta viene avviata la partita e il client naviga a `/game/casual`. Cliccando Torneo da non autenticati compare un messaggio che invita a fare il login. Cliccando Torneo da autenticati il client naviga a `/dashboard`. La navbar mostra il pulsante Login in alto a destra quando l'utente non è autenticato, sostituito da Logout e Statistiche dopo il login.
 - Route `/login`: pagina di login con un form per username e password. Dopo il login riuscito l'utente viene reindirizzato alla homepage.
-- Route `/casual`: pagina di gioco Casual, accessibile solo agli utenti non autenticati. Il giocatore sceglie il livello di difficoltà e poi viene mostrata la griglia di gioco. Le posizioni delle navi sono conservate server-side nella sessione e vengono rivelate solo al termine della partita.
-- Route `/torneo`: hub dei tornei, accessibile solo agli utenti autenticati. Il giocatore può creare un nuovo torneo scegliendo la difficoltà e ricevendo un codice condivisibile, oppure unirsi a uno esistente inserendo il codice di accesso.
-- Route `/game/:gameId`: griglia di gioco per una partita Torneo. Mostra la griglia, il numero di siluri rimanenti, le dimensioni delle navi e il risultato di ogni lancio. Le posizioni delle navi vengono rivelate al termine della partita.
+- Route `/dashboard`: hub dei tornei, accessibile solo agli utenti autenticati. Il giocatore può creare un nuovo torneo scegliendo la difficoltà e ricevendo un codice condivisibile, oppure unirsi a uno esistente inserendo il codice. In entrambi i casi viene poi reindirizzato a `/game/:id`.
+- Route `/game/:id`: griglia di gioco, utilizzata sia per le partite Casual (id fisso `"casual"`, stato in sessione) sia per le partite Torneo (id numerico, stato nel DB). Mostra la griglia, i siluri rimanenti, l'elenco delle navi e il risultato di ogni lancio. Le posizioni complete delle navi vengono rivelate solo al termine della partita tramite una chiamata separata a `GET /api/games/:id/ships`.
 - Route `/stats`: pagina delle statistiche, accessibile solo agli utenti autenticati tramite il pulsante Statistiche nella navbar. Mostra partite giocate, vinte e perse, e la percentuale di vittorie per ogni livello di difficoltà.
+- Route `*`: catch-all, reindirizza a `/`.
 
 ## API Server
 
@@ -18,12 +18,12 @@
 - Login: POST `/api/sessions`
 - Ottieni la sessione corrente: GET `/api/sessions/current`
 - Logout: DELETE `/api/sessions/current`
-- Avvia una partita Casual: POST `/api/casual/start`
-- Lancia un siluro in una partita Casual: POST `/api/casual/shoot`
+- Avvia una partita Casual: POST `/api/games`
 - Crea un torneo: POST `/api/tournaments`
-- Entra in un torneo: POST `/api/tournaments/join`
-- Ottieni lo stato di una partita Torneo: GET `/api/games/:id`
-- Lancia un siluro in una partita Torneo: POST `/api/games/:id/shoot`
+- Entra in un torneo: POST `/api/tournaments/:code/join`
+- Ottieni lo stato di una partita: GET `/api/games/:id`
+- Lancia un siluro: POST `/api/games/:id/shots`
+- Ottieni le posizioni delle navi (solo a fine partita): GET `/api/games/:id/ships`
 - Ottieni le statistiche dell'utente: GET `/api/stats`
 
 ---
@@ -64,7 +64,7 @@ Metodo HTTP: GET
 
 Descrizione: Verifica se l'utente è ancora loggato e restituisce le sue informazioni.
 
-Corpo della Request: _Nessuno_
+Corpo della Request: Nessuno
 
 Response: `200 OK` (successo) o `401 Unauthorized` (non autenticato).
 
@@ -86,21 +86,21 @@ Metodo HTTP: DELETE
 
 Descrizione: Distrugge la sessione corrente.
 
-Body della Request: _Nessuno_
+Body della Request: Nessuno
 
 Response: `200 OK` (successo).
 
-Body della Response: _Nessuno_
+Body della Response: Nessuno
 
 ---
 
 ### Avvia una partita Casual
 
-URL: `/api/casual/start`
+URL: `/api/games`
 
 Metodo HTTP: POST
 
-Descrizione: Avvia una nuova partita Casual per un utente anonimo. Il server genera casualmente le posizioni delle navi e le conserva nella sessione. Le posizioni non vengono mai inviate al client.
+Descrizione: Avvia una nuova partita Casual per un utente anonimo. Il server genera casualmente le posizioni delle navi e le conserva nella sessione Express. Le posizioni non vengono mai inviate al client. Restituisce l'ID fisso `"casual"` come identificatore di partita. Richiede che l'utente non sia autenticato.
 
 Body della Request:
 ```json
@@ -110,11 +110,12 @@ Body della Request:
 ```
 `difficulty` deve essere uno tra `"Facile"`, `"Intermedio"` e `"Difficile"`.
 
-Response: `201 Created` (successo) o `422 Unprocessable Entity` (errore di validazione).
+Response: `201 Created` (successo), `401 Unauthorized` (utente già autenticato) o `422 Unprocessable Entity` (errore di validazione).
 
 Body della Response:
 ```json
 {
+  "gameId": "casual",
   "gridSize": 7,
   "ships": 
   [
@@ -129,66 +130,13 @@ Body della Response:
 
 ---
 
-### Lancia un siluro in una partita Casual
-
-URL: `/api/casual/shoot`
-
-Metodo HTTP: POST
-
-Descrizione: Lancia un siluro su una cella della partita Casual corrente. Il risultato viene calcolato server-side rispetto alle posizioni delle navi conservate nella sessione. Se la partita termina, le posizioni complete delle navi vengono incluse nella risposta.
-
-Body della Request:
-```json
-{
-  "row": 2,
-  "col": 4
-}
-```
-
-Response: `200 OK` (successo), `400 Bad Request` (nessuna partita Casual attiva o cella già colpita) o `422 Unprocessable Entity` (errore di validazione).
-
-Body della Response (partita in corso):
-```json
-{
-  "result": "acqua",
-  "torpedoesRemaining": 17,
-  "status": "attivo"
-}
-```
-
-Body della Response (partita terminata):
-```json
-{
-  "result": "affondato",
-  "torpedoesRemaining": 12,
-  "status": "vinto",
-  "fullShips": 
-  [
-    { 
-      "row": 0, 
-      "col": 0, 
-      "size": 2, 
-      "dir": "H" 
-    },
-    { 
-      "row": 3, 
-      "col": 2, 
-      "size": 3, 
-      "dir": "V" 
-    }
-  ]
-}
-```
-
----
-
 ### Crea un torneo
 
 URL: `/api/tournaments`
 
 Metodo HTTP: POST
 
-Descrizione: Crea un nuovo torneo. Il server genera casualmente le posizioni delle navi e restituisce un codice univoco condivisibile. Richiede autenticazione.
+Descrizione: Crea un nuovo torneo. Il server genera casualmente le posizioni delle navi, le salva nel DB e restituisce un codice univoco condivisibile. Viene anche creata immediatamente una partita per il creatore. Richiede autenticazione.
 
 Body della Request:
 ```json
@@ -224,20 +172,15 @@ Body della Response:
 
 ### Entra in un torneo
 
-URL: `/api/tournaments/join`
+URL: `/api/tournaments/:code/join`
 
 Metodo HTTP: POST
 
-Descrizione: Entra in un torneo esistente tramite il suo codice. Viene creata una nuova partita per l'utente corrente con le stesse posizioni delle navi, la stessa griglia e la stessa difficoltà del creatore. Richiede autenticazione.
+Descrizione: Entra in un torneo esistente tramite il codice nell'URL. Viene creata una nuova partita per l'utente corrente con le stesse posizioni delle navi, la stessa griglia e la stessa difficoltà del creatore. Richiede autenticazione.
 
-Body della Request:
-```json
-{
-  "code": "XKCD42"
-}
-```
+Body della Request: Nessuno
 
-Response: `201 Created` (successo), `401 Unauthorized` (non autenticato), `404 Not Found` (codice non esistente), `409 Conflict` (l'utente ha già una partita in questo torneo) o `422 Unprocessable Entity` (errore di validazione).
+Response: `201 Created` (successo), `401 Unauthorized` (non autenticato), `404 Not Found` (codice non esistente) o `409 Conflict` (l'utente ha già una partita in questo torneo).
 
 Body della Response:
 ```json
@@ -260,19 +203,19 @@ Body della Response:
 
 ---
 
-### Ottieni lo stato di una partita Torneo
+### Ottieni lo stato di una partita
 
 URL: `/api/games/:id`
 
 Metodo HTTP: GET
 
-Descrizione: Restituisce lo stato attuale di una partita Torneo, inclusi tutti i siluri lanciati finora. Se la partita è terminata, vengono incluse anche le posizioni complete delle navi. Richiede autenticazione e proprietà della partita.
+Descrizione: Restituisce lo stato attuale di una partita, inclusi tutti i siluri lanciati finora. Per le partite Casual (`id = "casual"`) legge dalla sessione, mentre per le partite Torneo (id numerico) legge dal DB e richiede autenticazione e proprietà della partita. Le posizioni delle navi non vengono mai incluse in questa risposta. Per vedere le posizioni delle navi a fine partita usare `GET /api/games/:id/ships`.
 
-Body della Request: _Nessuno_
+Body della Request: Nessuno
 
-Response: `200 OK` (successo), `401 Unauthorized` (non autenticato o non proprietario) o `404 Not Found` (partita non trovata).
+Response: `200 OK` (successo), `401 Unauthorized` (non autenticato o non proprietario, solo Torneo) o `404 Not Found` (partita non trovata).
 
-Body della Response (partita in corso):
+Body della Response:
 ```json
 {
   "gridSize": 10,
@@ -299,45 +242,15 @@ Body della Response (partita in corso):
 }
 ```
 
-Body della Response (partita terminata, aggiunge `fullShips`):
-```json
-{
-  "gridSize": 10,
-  "ships": 
-  [
-    { "size": 2 }, 
-    { "size": 3 }
-  ],
-  "torpedoesRemaining": 0,
-  "status": "perso",
-  "shots": ["..."],
-  "fullShips": 
-  [
-    { 
-      "row": 2, 
-      "col": 1, 
-      "size": 2, 
-      "dir": "H" 
-    },
-    { 
-      "row": 5, 
-      "col": 6, 
-      "size": 3, 
-      "dir": "V" 
-    }
-  ]
-}
-```
-
 ---
 
-### Lancia un siluro in una partita Torneo
+### Lancia un siluro
 
-URL: `/api/games/:id/shoot`
+URL: `/api/games/:id/shots`
 
 Metodo HTTP: POST
 
-Descrizione: Lancia un siluro su una cella della partita Torneo specificata. Richiede autenticazione e proprietà della partita.
+Descrizione: Lancia un siluro su una cella della partita specificata. Per le partite Casual legge e aggiorna lo stato dalla sessione, mentre per le partite Torneo richiede autenticazione e proprietà della partita.
 
 Body della Request:
 ```json
@@ -347,9 +260,9 @@ Body della Request:
 }
 ```
 
-Response: `200 OK` (successo), `400 Bad Request` (partita non attiva o cella già colpita), `401 Unauthorized` (non autenticato o non proprietario), `404 Not Found` (partita non trovata) o `422 Unprocessable Entity` (errore di validazione).
+Response: `200 OK` (successo), `400 Bad Request` (partita non attiva o cella già colpita), `401 Unauthorized` (non autenticato o non proprietario, solo Torneo), `404 Not Found` (partita non trovata) o `422 Unprocessable Entity` (errore di validazione).
 
-Body della Response (partita in corso):
+Body della Response:
 ```json
 {
   "result": "colpito",
@@ -358,22 +271,36 @@ Body della Response (partita in corso):
 }
 ```
 
-Body della Response (partita terminata, aggiunge `fullShips`):
+---
+
+### Ottieni le posizioni delle navi
+
+URL: `/api/games/:id/ships`
+
+Metodo HTTP: GET
+
+Descrizione: Restituisce le posizioni complete di tutte le navi. Risponde `403 Forbidden` se la partita è ancora in corso, poiché le posizioni vengono rivelate solo a fine partita. Per le partite Casual legge dalla sessione, mentre per le partite Torneo richiede autenticazione e proprietà della partita.
+
+Body della Request: Nessuno
+
+Response: `200 OK` (successo), `400 Bad Request` (partita non trovata o ancora in corso), `401 Unauthorized` (non autenticato o non proprietario, solo Torneo).
+
+Body della Response:
 ```json
-{
-  "result": "affondato",
-  "torpedoesRemaining": 10,
-  "status": "vinto",
-  "fullShips": 
-  [
-    { 
-      "row": 3, 
-      "col": 5, 
-      "size": 3, 
-      "dir": "H" 
-    }
-  ]
-}
+[
+  { 
+    "row": 0, 
+    "col": 0, 
+    "size": 2, 
+    "dir": "H" 
+  },
+  { 
+    "row": 3, 
+    "col": 2, 
+    "size": 3, 
+    "dir": "V" 
+  }
+]
 ```
 
 ---
@@ -417,7 +344,7 @@ Body della Response:
 - `users`: contiene i tre utenti pre-registrati. Colonne: id, username, password (hash esadecimale), salt.
 - `tournaments`: una riga per ogni torneo creato. Colonne: id, code (univoco), difficulty, grid_size, ships (JSON con le posizioni complete delle navi). Le posizioni sono conservate solo qui e non vengono mai inviate al client durante una partita attiva.
 - `games`: una riga per ogni partita Torneo di ogni utente. Colonne: id, user_id, tournament_id, torpedoes_remaining, status (attivo / vinto / perso).
-- `shots`: una riga per ogni siluro lanciato. Colonne: id, game_id, row, col, result (acqua / colpito / affondato). Usata per ricostruire la griglia e calcolare le statistiche.
+- `shots`: una riga per ogni siluro lanciato in una partita Torneo. Colonne: id, game_id, row, col, result (acqua / colpito / affondato). Usata per ricostruire la griglia e calcolare le statistiche.
 
 ### Livelli di difficoltà
 
@@ -429,12 +356,12 @@ Body della Response:
 
 ## Principali componenti React
 
-- `NavHeader` (in `NavHeader.jsx`): barra di navigazione che mostra un pulsante Login in alto a destra quando l'utente non è autenticato, e un pulsante Logout più un pulsante Statistiche in alto a sinistra quando è autenticato.
+- `NavHeader` (in `NavHeader.jsx`): barra di navigazione che mostra il pulsante Login in alto a destra quando l'utente non è autenticato, e i pulsanti Logout e Statistiche quando è autenticato.
 - `LoginForm` (in `AuthComponents.jsx`): form di login con validazione client-side.
-- `DifficultySelector` (in `DifficultySelector.jsx`): selettore del livello di difficoltà tra Facile, Intermedio e Difficile.
+- `HomePage` (in `HomePage.jsx`): schermata principale con i tre pulsanti Casual, Torneo e Login. Mostra il selettore di difficoltà quando si clicca Casual. Se non autenticato e si clicca Torneo, mostra un messaggio che invita al login.
+- `Dashboard` (in `Dashboard.jsx`): hub dei tornei per utenti autenticati. Permette di creare un nuovo torneo e ricevere un codice condivisibile, oppure di unirsi a uno esistente inserendo il codice.
 - `GameBoard` (in `GameBoard.jsx`): griglia NxN interattiva che mostra le celle acqua, colpito e affondato e gestisce i click per lanciare i siluri.
 - `ShipList` (in `ShipList.jsx`): elenco delle navi nella partita corrente con le loro dimensioni e lo stato (affondata o no).
-- `TournamentHub` (in `TournamentHub.jsx`): permette di creare un nuovo torneo e ricevere un codice condivisibile, oppure di unirsi a uno esistente inserendo il codice.
 - `StatsTable` (in `StatsTable.jsx`): tabella delle statistiche suddivisa per livello di difficoltà.
 
 ## Screenshot
