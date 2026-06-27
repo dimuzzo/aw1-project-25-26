@@ -41,6 +41,17 @@ export default function GameDao() {
         });
     }
 
+    // cerca la partita di un utente in un dato torneo
+    this.getGameByTournament = (userId, tournamentId) => {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT * FROM games WHERE user_id=? AND tournament_id=?';
+            db.get(query, [userId, tournamentId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+    }
+
     // ottieni i colpi di una partita
     this.getShotsByGame = (gameId) => {
         return new Promise((resolve, reject) => {
@@ -94,10 +105,16 @@ export default function GameDao() {
             const query = `SELECT t.difficulty, COUNT(*) as played, SUM(g.status='vinto') as won,
                             SUM(g.status='perso') as lost
                             FROM games g JOIN tournaments t ON g.tournament_id = t.id
-                            WHERE g.user_id=? GROUP BY t.difficulty`;
-            db.all(query, [userId], function (err, row) {
+                            WHERE g.user_id=? AND g.status != 'attivo' GROUP BY t.difficulty`;
+            db.all(query, [userId], function (err, rows) {
                 if (err) reject(err);
-                else resolve(row);
+                else resolve(rows.map(r => ({
+                    difficulty: r.difficulty,
+                    played: r.played,
+                    won: r.won,
+                    lost: r.lost,
+                    winPct: r.played > 0 ? Math.round((r.won / r.played) * 1000) / 10 : 0
+                })));
             })
         })
     }

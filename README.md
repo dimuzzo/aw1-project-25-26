@@ -44,7 +44,7 @@ Body della Request:
 }
 ```
 
-Response: `201 Created` (successo) o `401 Unauthorized` (credenziali errate).
+Response: `200 OK` (successo) o `401 Unauthorized` (credenziali errate).
 
 Body della Response:
 ```json
@@ -124,7 +124,9 @@ Body della Response:
     { "size": 3 }, 
     { "size": 3 }
   ],
-  "torpedoesRemaining": 18
+  "torpedoesRemaining": 18,
+  "status": "attivo",
+  "shots": []
 }
 ```
 
@@ -164,7 +166,9 @@ Body della Response:
     { "size": 4 }, 
     { "size": 5 }
   ],
-  "torpedoesRemaining": 28
+  "torpedoesRemaining": 28,
+  "status": "attivo",
+  "shots": []
 }
 ```
 
@@ -197,7 +201,9 @@ Body della Response:
     { "size": 4 }, 
     { "size": 5 }
   ],
-  "torpedoesRemaining": 28
+  "torpedoesRemaining": 28,
+  "status": "attivo",
+  "shots": []
 }
 ```
 
@@ -279,7 +285,7 @@ URL: `/api/games/:id/ships`
 
 Metodo HTTP: GET
 
-Descrizione: Restituisce le posizioni complete di tutte le navi. Risponde `403 Forbidden` se la partita è ancora in corso, poiché le posizioni vengono rivelate solo a fine partita. Per le partite Casual legge dalla sessione, mentre per le partite Torneo richiede autenticazione e proprietà della partita.
+Descrizione: Restituisce le posizioni complete di tutte le navi. Risponde `400 Bad Request` se la partita è ancora in corso, poiché le posizioni vengono rivelate solo a fine partita. Per le partite Casual legge dalla sessione, mentre per le partite Torneo richiede autenticazione e proprietà della partita.
 
 Body della Request: Nessuno
 

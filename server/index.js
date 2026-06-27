@@ -2,7 +2,7 @@
 import express from "express";
 import morgan from 'morgan'; // middleware per il logging
 import cors from 'cors'; // middleware per il CORS
-import { check, validationResult } from 'express-validator'; // middleware per la validazione
+//import { check, validationResult } from 'express-validator'; // middleware per la validazione
 import passport from "passport"; // middleware per l'autenticazione
 import session from "express-session"; // middleware per la strategia di autenticazione
 import LocalStrategy from "passport-local"; // strategia di autenticazione locale
@@ -89,6 +89,7 @@ const isDifficultyValid = (req, res, next) => {
 
 
 /* API utenti */
+
 // POST /api/sessions : login dell'utente
 app.post('/api/sessions', function (req, res, next) {
   passport.authenticate('local', function (err, user, info) {
@@ -120,9 +121,23 @@ app.delete('/api/sessions/current', (req, res) => {
 
 /* API partite e tornei */
 
-// POST /api/games : avvia una partita Casual
-app.post('/api/games', (req, res) => {
+// POST /api/games : avvia una partita Casual (solo per utenti anonimi, stato salvato in sessione)
+app.post('/api/games', isNotLoggedIn, isDifficultyValid, (req, res) => {
+  const { difficulty } = req.body;
+  const config = DIFFICULTY_CONFIG[difficulty];
 
+  try {
+    // genera la griglia e posiziona le navi
+    const { ships } = placeShipsOnGrid(config.gridSize, config.shipSizes);
+
+    // salva lo stato della partita nella sessione
+    req.session.game = { difficulty, gridSize: config.gridSize, ships, torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' };
+
+    // invia al client solo i dati non sensibili durante la partita
+    res.status(201).json({ gameId: 'casual', gridSize: config.gridSize, ships: ships.map(s => ({ size: s.size })), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
+  } catch (err) {
+    res.status(500).json({ error: 'Errore nella creazione della partita' });
+  }
 });
 
 // POST /api/tournaments : crea un torneo
@@ -143,7 +158,7 @@ app.post('/api/tournaments', isLoggedIn, isDifficultyValid, async (req, res) => 
     // crea la partita del creatore nel database
     const gameId = await gameDao.createGame(req.user.id, tournamentId, config.torpedoes);
 
-    res.status(201).json({ code, gameId, gridSize: config.gridSize, ships: ships.map(s => ({ size: s.size })), torpedoesRemaining: config.torpedoes });
+    res.status(201).json({ code, gameId, gridSize: config.gridSize, ships: ships.map(s => ({ size: s.size })), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
   } catch (err) {
     res.status(500).json({ error: 'Errore nella creazione del torneo' });
   }
@@ -161,6 +176,12 @@ app.post('/api/tournaments/:code/join', isLoggedIn, async (req, res) => {
       return res.status(404).json({ error: 'Torneo non trovato' });
     }
 
+    // se l'utente ha già una partita in questo torneo, non viene creata un'altra
+    const existing = await gameDao.getGameByTournament(userId, tournament.id);
+    if (existing) {
+      return res.status(409).json({ error: 'Hai già una partita in questo torneo' });
+    }
+
     const config = DIFFICULTY_CONFIG[tournament.difficulty];
 
     const ships = JSON.parse(tournament.ships);
@@ -168,7 +189,7 @@ app.post('/api/tournaments/:code/join', isLoggedIn, async (req, res) => {
     // crea la partita nel database del giocatore
     const gameId = await gameDao.createGame(userId, tournament.id, config.torpedoes);
 
-    res.status(201).json({ gameId, gridSize: tournament.grid_size, ships: ships.map(s => ({ size: s.size })), torpedoesRemaining: config.torpedoes });
+    res.status(201).json({ gameId, gridSize: tournament.grid_size, ships: ships.map(s => ({ size: s.size })), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
   } catch (err) {
     res.status(500).json({ error: 'Errore nell\'adesione al torneo' });
   }

@@ -30,7 +30,7 @@ export default function placeShipsOnGrid(gridSize, shipSizes) {
 }
 
 // verifica se è possibile piazzare una nave
-// la nave non deve toccare i bordi della griglia né toccare le navi (1) o le celle adiacenti ad esse (2)
+// la nave deve restare dentro la griglia (può toccare i bordi) e non sovrapporsi alle navi (1) né alle celle adiacenti ad esse (2)
 function canPlaceShip(grid, row, col, size, dir, gridSize) {
     for (let i = 0; i < size; i++) {
         if (dir === 'V') {
