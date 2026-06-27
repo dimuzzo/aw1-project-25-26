@@ -99,16 +99,21 @@ export default function GameDao() {
         });
     }
 
-    // ottieni le statistiche di un utente
-    this.getStats = (userId) => {
+    // ottieni le statistiche di tutti i giocatori, per difficoltà
+    this.getStats = () => {
         return new Promise((resolve, reject) => {
-            const query = `SELECT t.difficulty, COUNT(*) as played, SUM(g.status='vinto') as won,
-                            SUM(g.status='perso') as lost
-                            FROM games g JOIN tournaments t ON g.tournament_id = t.id
-                            WHERE g.user_id=? AND g.status != 'attivo' GROUP BY t.difficulty`;
-            db.all(query, [userId], function (err, rows) {
+            const query = `SELECT u.username, t.difficulty, COUNT(*) as played,
+                            SUM(g.status='vinto') as won, SUM(g.status='perso') as lost
+                            FROM games g
+                            JOIN tournaments t ON g.tournament_id = t.id
+                            JOIN users u ON g.user_id = u.id
+                            WHERE g.status != 'attivo'
+                            GROUP BY u.id, t.difficulty
+                            ORDER BY u.username, t.difficulty`;
+            db.all(query, [], function (err, rows) {
                 if (err) reject(err);
                 else resolve(rows.map(r => ({
+                    username: r.username,
                     difficulty: r.difficulty,
                     played: r.played,
                     won: r.won,

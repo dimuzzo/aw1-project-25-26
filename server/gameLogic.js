@@ -1,4 +1,5 @@
 /* Modulo per la gestione della logica di gioco (posizionamento navi) */
+
 export default function placeShipsOnGrid(gridSize, shipSizes) {
     // prova fino a 1000 volte a piazzare tutte le navi
     for (let i = 0; i < 1000; i++) {
@@ -68,4 +69,46 @@ function doPlaceShip(grid, row, col, size, dir, gridSize) {
             }
         }
     }
+}
+
+// espande una nave nell'elenco delle celle che occupa
+export function getShipCells(ship) {
+    const cells = [];
+    for (let i = 0; i < ship.size; i++) {
+        if (ship.dir === 'V') cells.push({ row: ship.row + i, col: ship.col });
+        else cells.push({ row: ship.row, col: ship.col + i });
+    }
+    return cells;
+}
+
+// calcola l'esito di un siluro su (row, col)
+// ships: navi della partita
+// shots: tiri precedenti
+// restituisce { result: 'acqua' || 'colpito' || 'affondato', won: boolean }
+export function computeShotResult(ships, shots, row, col) {
+    // trova la nave che occupa la cella colpita, se esiste
+    const hitShip = ships.find(ship =>
+        getShipCells(ship).some(c => c.row === row && c.col === col)
+    );
+
+    // nessuna nave: è acqua e un tiro a vuoto non può far vincere
+    if (!hitShip) {
+        return { result: 'acqua', won: false };
+    }
+
+    // insieme delle celle già colpite, più quella attuale
+    const hit = new Set(
+        shots.filter(s => s.result !== 'acqua').map(s => `${s.row},${s.col}`)
+    );
+    hit.add(`${row},${col}`);
+
+    // nave affondata se tutte le sue celle sono state colpite
+    const sunk = getShipCells(hitShip).every(c => hit.has(`${c.row},${c.col}`));
+
+    // partita vinta se tutte le celle di tutte le navi sono state colpite
+    const won = ships.every(ship =>
+        getShipCells(ship).every(c => hit.has(`${c.row},${c.col}`))
+    );
+
+    return { result: sunk ? 'affondato' : 'colpito', won };
 }

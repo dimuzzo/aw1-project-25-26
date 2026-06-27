@@ -4,11 +4,11 @@
 
 ## Route dell'applicazione React
 
-- Route `/`: homepage con tre pulsanti, Casual, Torneo e Login. Cliccando Casual (accessibile solo agli utenti non autenticati) compare un selettore di difficoltà. Dopo la scelta viene avviata la partita e il client naviga a `/game/casual`. Cliccando Torneo da non autenticati compare un messaggio che invita a fare il login. Cliccando Torneo da autenticati il client naviga a `/dashboard`. La navbar mostra il pulsante Login in alto a destra quando l'utente non è autenticato, sostituito da Logout e Statistiche dopo il login.
+- Route `/`: homepage con tre pulsanti, Casual, Torneo e Login. Cliccando Casual (accessibile solo agli utenti non autenticati) compare un selettore di difficoltà. Dopo la scelta viene avviata la partita e il client naviga a `/game/casual`. Cliccando Torneo da non autenticati compare un messaggio che invita a fare il login. Cliccando Torneo da autenticati il client naviga a `/dashboard`. La navbar mostra sempre il pulsante Statistiche (accessibile a tutti) e, in alto a destra, il pulsante Login quando l'utente non è autenticato, sostituito da Logout dopo il login.
 - Route `/login`: pagina di login con un form per username e password. Dopo il login riuscito l'utente viene reindirizzato alla homepage.
 - Route `/dashboard`: hub dei tornei, accessibile solo agli utenti autenticati. Il giocatore può creare un nuovo torneo scegliendo la difficoltà e ricevendo un codice condivisibile, oppure unirsi a uno esistente inserendo il codice. In entrambi i casi viene poi reindirizzato a `/game/:id`.
 - Route `/game/:id`: griglia di gioco, utilizzata sia per le partite Casual (id fisso `"casual"`, stato in sessione) sia per le partite Torneo (id numerico, stato nel DB). Mostra la griglia, i siluri rimanenti, l'elenco delle navi e il risultato di ogni lancio. Le posizioni complete delle navi vengono rivelate solo al termine della partita tramite una chiamata separata a `GET /api/games/:id/ships`.
-- Route `/stats`: pagina delle statistiche, accessibile solo agli utenti autenticati tramite il pulsante Statistiche nella navbar. Mostra partite giocate, vinte e perse, e la percentuale di vittorie per ogni livello di difficoltà.
+- Route `/stats`: pagina delle statistiche, pubblica e accessibile a tutti (anche non autenticati) tramite il pulsante Statistiche nella navbar. Mostra, per ogni giocatore e per ogni livello di difficoltà, le partite giocate, vinte e perse e la percentuale di vittorie.
 - Route `*`: catch-all, reindirizza a `/`.
 
 ## API Server
@@ -24,7 +24,7 @@
 - Ottieni lo stato di una partita: GET `/api/games/:id`
 - Lancia un siluro: POST `/api/games/:id/shots`
 - Ottieni le posizioni delle navi (solo a fine partita): GET `/api/games/:id/ships`
-- Ottieni le statistiche dell'utente: GET `/api/stats`
+- Ottieni le statistiche dei giocatori (pubblica): GET `/api/stats`
 
 ---
 
@@ -219,7 +219,7 @@ Descrizione: Restituisce lo stato attuale di una partita, inclusi tutti i siluri
 
 Body della Request: Nessuno
 
-Response: `200 OK` (successo), `401 Unauthorized` (non autenticato o non proprietario, solo Torneo) o `404 Not Found` (partita non trovata).
+Response: `200 OK` (successo), `401 Unauthorized` (non autenticato, solo Torneo) o `404 Not Found` (partita non trovata o non accessibile).
 
 Body della Response:
 ```json
@@ -266,7 +266,7 @@ Body della Request:
 }
 ```
 
-Response: `200 OK` (successo), `400 Bad Request` (partita non attiva o cella già colpita), `401 Unauthorized` (non autenticato o non proprietario, solo Torneo), `404 Not Found` (partita non trovata) o `422 Unprocessable Entity` (errore di validazione).
+Response: `200 OK` (successo), `400 Bad Request` (partita non attiva o cella già colpita), `401 Unauthorized` (non autenticato, solo Torneo), `404 Not Found` (partita non trovata o non accessibile) o `422 Unprocessable Entity` (errore di validazione, ad esempio coordinate mancanti o fuori dalla griglia).
 
 Body della Response:
 ```json
@@ -289,7 +289,7 @@ Descrizione: Restituisce le posizioni complete di tutte le navi. Risponde `400 B
 
 Body della Request: Nessuno
 
-Response: `200 OK` (successo), `400 Bad Request` (partita non trovata o ancora in corso), `401 Unauthorized` (non autenticato o non proprietario, solo Torneo).
+Response: `200 OK` (successo), `400 Bad Request` (partita ancora in corso), `401 Unauthorized` (non autenticato, solo Torneo) o `404 Not Found` (partita non trovata o non accessibile).
 
 Body della Response:
 ```json
@@ -311,22 +311,23 @@ Body della Response:
 
 ---
 
-### Ottieni le statistiche dell'utente
+### Ottieni le statistiche dei giocatori
 
 URL: `/api/stats`
 
 Metodo HTTP: GET
 
-Descrizione: Restituisce le statistiche dell'utente autenticato, suddivise per livello di difficoltà.
+Descrizione: Restituisce le statistiche di tutti i giocatori, suddivise per giocatore e per livello di difficoltà. È una route pubblica, accessibile anche dagli utenti non autenticati.
 
 Body della Request: _Nessuno_
 
-Response: `200 OK` (successo) o `401 Unauthorized` (non autenticato).
+Response: `200 OK` (successo) o `500 Internal Server Error` (errore nel recupero).
 
 Body della Response:
 ```json
 [
   { 
+    "username": "alice",
     "difficulty": "Facile", 
     "played": 3, 
     "won": 2, 
@@ -334,6 +335,7 @@ Body della Response:
     "winPct": 66.7 
   },
   { 
+    "username": "bob",
     "difficulty": "Intermedio", 
     "played": 1, 
     "won": 0, 
@@ -368,7 +370,7 @@ Body della Response:
 - `Dashboard` (in `Dashboard.jsx`): hub dei tornei per utenti autenticati. Permette di creare un nuovo torneo e ricevere un codice condivisibile, oppure di unirsi a uno esistente inserendo il codice.
 - `GameBoard` (in `GameBoard.jsx`): griglia NxN interattiva che mostra le celle acqua, colpito e affondato e gestisce i click per lanciare i siluri.
 - `ShipList` (in `ShipList.jsx`): elenco delle navi nella partita corrente con le loro dimensioni e lo stato (affondata o no).
-- `StatsTable` (in `StatsTable.jsx`): tabella delle statistiche suddivisa per livello di difficoltà.
+- `StatsTable` (in `StatsTable.jsx`): tabella delle statistiche suddivisa per giocatore e per livello di difficoltà.
 
 ## Screenshot
 

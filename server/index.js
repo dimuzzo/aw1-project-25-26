@@ -2,13 +2,13 @@
 import express from "express";
 import morgan from 'morgan'; // middleware per il logging
 import cors from 'cors'; // middleware per il CORS
-//import { check, validationResult } from 'express-validator'; // middleware per la validazione
+import { check, validationResult } from 'express-validator'; // middleware per la validazione
 import passport from "passport"; // middleware per l'autenticazione
 import session from "express-session"; // middleware per la strategia di autenticazione
 import LocalStrategy from "passport-local"; // strategia di autenticazione locale
 import UserDao from "./dao-users.js"; // dao per gli utenti
 import GameDao from "./dao-games.js"; // dao per le partite
-import placeShipsOnGrid from "./gameLogic.js";
+import placeShipsOnGrid, { computeShotResult } from "./gameLogic.js"; // logica di gioco
 
 
 const userDao = new UserDao();
@@ -78,14 +78,19 @@ const isNotLoggedIn = (req, res, next) => {
   return res.status(401).json({ error: 'Non autorizzato' });
 };
 
-// definisce il middleware di verifica della difficoltà
-const isDifficultyValid = (req, res, next) => {
-  const { difficulty } = req.body;
-  if (difficulty === 'Facile' || difficulty === 'Intermedio' || difficulty === 'Difficile') {
-    return next();
-  }
-  return res.status(422).json({ error: 'Difficoltà non valida' });
+// contiene solo il messaggio di errore nella risposta
+const errorFormatter = ({ msg }) => msg;
+
+// gestisce gli errori di validazione restituendo 422
+const onValidationErrors = (validationResult, res) => {
+  const errors = validationResult.formatWith(errorFormatter);
+  return res.status(422).json({ validationErrors: errors.mapped() });
 };
+
+// regola di validazione per la difficoltà
+const difficultyValidation = [
+  check('difficulty').isIn(['Facile', 'Intermedio', 'Difficile'])
+];
 
 
 /* API utenti */
@@ -122,7 +127,11 @@ app.delete('/api/sessions/current', (req, res) => {
 /* API partite e tornei */
 
 // POST /api/games : avvia una partita Casual (solo per utenti anonimi, stato salvato in sessione)
-app.post('/api/games', isNotLoggedIn, isDifficultyValid, (req, res) => {
+app.post('/api/games', isNotLoggedIn, difficultyValidation, (req, res) => {
+  const invalidFields = validationResult(req);
+  if (!invalidFields.isEmpty()) {
+    return onValidationErrors(invalidFields, res);
+  }
   const { difficulty } = req.body;
   const config = DIFFICULTY_CONFIG[difficulty];
 
@@ -141,7 +150,11 @@ app.post('/api/games', isNotLoggedIn, isDifficultyValid, (req, res) => {
 });
 
 // POST /api/tournaments : crea un torneo
-app.post('/api/tournaments', isLoggedIn, isDifficultyValid, async (req, res) => {
+app.post('/api/tournaments', isLoggedIn, difficultyValidation, async (req, res) => {
+  const invalidFields = validationResult(req);
+  if (!invalidFields.isEmpty()) {
+    return onValidationErrors(invalidFields, res);
+  }
   const { difficulty } = req.body;
   const config = DIFFICULTY_CONFIG[difficulty];
 
@@ -195,25 +208,179 @@ app.post('/api/tournaments/:code/join', isLoggedIn, async (req, res) => {
   }
 });
 
-// GET /api/games/:id : ottieni lo stato di una partita
-app.get('/api/games/:id', (req, res) => {
+// GET /api/games/:id : ottieni lo stato di una partita (senza le posizioni delle navi)
+app.get('/api/games/:id', async (req, res) => {
+  const { id } = req.params;
 
+  // casual: stato nella sessione
+  if (id === 'casual') {
+    const game = req.session.game;
+    if (!game) {
+      return res.status(404).json({ error: 'Partita non trovata' });
+    }
+    return res.json({
+      gridSize: game.gridSize,
+      ships: game.ships.map(s => ({ size: s.size })),
+      torpedoesRemaining: game.torpedoesRemaining,
+      status: game.status,
+      shots: game.shots
+    });
+  }
+
+  // torneo: stato nel DB, serve autenticazione e proprietà
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Non autorizzato' });
+  }
+
+  try {
+    const game = await gameDao.getGameById(id, req.user.id);
+    if (game.error) {
+      return res.status(404).json({ error: 'Partita non trovata' });
+    }
+    // i tiri vengono da una tabella separata
+    const shots = await gameDao.getShotsByGame(id);
+    // le posizioni complete restano nel server: al client mando solo le dimensioni
+    const ships = JSON.parse(game.ships);
+    return res.json({
+      gridSize: game.grid_size,
+      ships: ships.map(s => ({ size: s.size })),
+      torpedoesRemaining: game.torpedoes_remaining,
+      status: game.status,
+      shots
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Errore nel recupero della partita' });
+  }
 });
 
 // POST /api/games/:id/shots : lancia un siluro
-app.post('/api/games/:id/shots', (req, res) => {
+app.post('/api/games/:id/shots',
+  [check('row').isInt({ min: 0 }).toInt(), check('col').isInt({ min: 0 }).toInt()],
+  async (req, res) => {
+    const invalidFields = validationResult(req);
+    if (!invalidFields.isEmpty()) {
+      return onValidationErrors(invalidFields, res);
+    }
 
-});
+    const { id } = req.params;
+    const { row, col } = req.body;
 
-// GET /api/games/:id/ships : ottieni le posizioni delle navi di una partita (solo alla fine della partita)
-app.get('/api/games/:id/ships', (req, res) => {
+    // casual: stato nella sessione
+    if (id === 'casual') {
+      const game = req.session.game;
+      if (!game) {
+        return res.status(404).json({ error: 'Partita non trovata' });
+      }
+      if (game.status !== 'attivo') {
+        return res.status(400).json({ error: 'La partita non è attiva' });
+      }
+      if (row >= game.gridSize || col >= game.gridSize) {
+        return res.status(422).json({ error: 'Cella fuori dalla griglia' });
+      }
+      if (game.shots.some(s => s.row === row && s.col === col)) {
+        return res.status(400).json({ error: 'Cella già colpita' });
+      }
 
-});
+      // calcola l'esito e registra il tiro
+      const { result, won } = computeShotResult(game.ships, game.shots, row, col);
+      game.shots.push({ row, col, result });
 
-// GET /api/stats : ottieni le statistiche dell'utente
-app.get('/api/stats', isLoggedIn, async (req, res) => {
+      // solo l'acqua consuma un siluro
+      if (result === 'acqua') game.torpedoesRemaining -= 1;
+
+      // aggiorna lo stato finale della partita
+      if (won) game.status = 'vinto';
+      else if (game.torpedoesRemaining === 0) game.status = 'perso';
+
+      return res.json({ result, torpedoesRemaining: game.torpedoesRemaining, status: game.status });
+    }
+
+    // torneo: stato nel DB, serve autenticazione e proprietà
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Non autorizzato' });
+    }
+
+    try {
+      // la partita deve esistere ed essere del giocatore loggato
+      const game = await gameDao.getGameById(id, req.user.id);
+      if (game.error) {
+        return res.status(404).json({ error: 'Partita non trovata' });
+      }
+      if (game.status !== 'attivo') {
+        return res.status(400).json({ error: 'La partita non è attiva' });
+      }
+      if (row >= game.grid_size || col >= game.grid_size) {
+        return res.status(422).json({ error: 'Cella fuori dalla griglia' });
+      }
+
+      // tiri già effettuati in questa partita
+      const shots = await gameDao.getShotsByGame(id);
+      if (shots.some(s => s.row === row && s.col === col)) {
+        return res.status(400).json({ error: 'Cella già colpita' });
+      }
+
+      // le posizioni delle navi sono salvate come JSON nel torneo
+      const ships = JSON.parse(game.ships);
+      const { result, won } = computeShotResult(ships, shots, row, col);
+
+      // solo l'acqua consuma un siluro
+      const torpedoesRemaining = result === 'acqua' ? game.torpedoes_remaining - 1 : game.torpedoes_remaining;
+
+      // calcola lo stato finale della partita
+      let status = 'attivo';
+      if (won) status = 'vinto';
+      else if (torpedoesRemaining === 0) status = 'perso';
+
+      // salva il tiro e aggiorna la partita nel database
+      await gameDao.addShot(id, row, col, result);
+      await gameDao.updateGame(id, torpedoesRemaining, status);
+
+      return res.json({ result, torpedoesRemaining, status });
+    } catch (err) {
+      return res.status(500).json({ error: 'Errore nel lancio del siluro' });
+    }
+  });
+
+// GET /api/games/:id/ships : ottieni le posizioni delle navi di una partita (solo a partita finita)
+app.get('/api/games/:id/ships', async (req, res) => {
+  const { id } = req.params;
+
+  // casual: stato nella sessione
+  if (id === 'casual') {
+    const game = req.session.game;
+    if (!game) {
+      return res.status(404).json({ error: 'Partita non trovata' });
+    }
+    // le posizioni si rivelano solo a partita finita
+    if (game.status === 'attivo') {
+      return res.status(400).json({ error: 'La partita è ancora in corso' });
+    }
+    return res.json(game.ships);
+  }
+
+  // torneo: stato nel DB, serve autenticazione e proprietà
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Non autorizzato' });
+  }
+
   try {
-    const stats = await gameDao.getStats(req.user.id);
+    const game = await gameDao.getGameById(id, req.user.id);
+    if (game.error) {
+      return res.status(404).json({ error: 'Partita non trovata' });
+    }
+    if (game.status === 'attivo') {
+      return res.status(400).json({ error: 'La partita è ancora in corso' });
+    }
+    return res.json(JSON.parse(game.ships));
+  } catch (err) {
+    return res.status(500).json({ error: 'Errore nel recupero delle navi' });
+  }
+});
+
+// GET /api/stats : statistiche di tutti i giocatori, per difficoltà (pubbliche)
+app.get('/api/stats', async (req, res) => {
+  try {
+    const stats = await gameDao.getStats();
     res.json(stats);
   } catch (err) {
     res.status(500).json({ error: 'Errore nel recupero delle statistiche' });
