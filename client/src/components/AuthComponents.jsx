@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Form, Button, Row, Col, Alert } from "react-bootstrap";
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
 
 export function LoginForm(props) {
     const [username, setUsername] = useState("");
@@ -39,6 +39,17 @@ export function LoginForm(props) {
     );
 }
 
-export function LogoutButton(props) {
-    return <Button variant="outline-light" onClick={props.logout}>Logout</Button>;
+function LogoutButton(props) {
+    return (
+        <Button variant="outline-light" onClick={props.logout}>Logout</Button>
+    )
 }
+
+function LoginButton() {
+    const navigate = useNavigate();
+    return (
+        <Button variant="outline-light" onClick={() => navigate('/login')}>Login</Button>
+    )
+}
+
+export { LogoutButton, LoginButton };

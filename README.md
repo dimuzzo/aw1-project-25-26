@@ -4,7 +4,7 @@
 
 ## Route dell'applicazione React
 
-- Route `/`: homepage con tre pulsanti, Casual, Torneo e Login. Cliccando Casual (accessibile solo agli utenti non autenticati) compare un selettore di difficoltà. Dopo la scelta viene avviata la partita e il client naviga a `/game/casual`. Cliccando Torneo da non autenticati compare un messaggio che invita a fare il login. Cliccando Torneo da autenticati il client naviga a `/dashboard`. La navbar mostra sempre il pulsante Statistiche (accessibile a tutti) e, in alto a destra, il pulsante Login quando l'utente non è autenticato, sostituito da Logout dopo il login.
+- Route `/`: homepage con due pulsanti, Casual e Torneo. Cliccando Casual (accessibile solo agli utenti non autenticati) compare un selettore di difficoltà. Dopo la scelta viene avviata la partita e il client naviga a `/game/casual`. Cliccando Torneo da non autenticati compare un messaggio che invita a fare il login. Cliccando Torneo da autenticati il client naviga a `/dashboard`. La navbar mostra sempre il pulsante Statistiche (accessibile a tutti) e, in alto a destra, il pulsante Login quando l'utente non è autenticato, sostituito da Logout dopo il login.
 - Route `/login`: pagina di login con un form per username e password. Dopo il login riuscito l'utente viene reindirizzato alla homepage.
 - Route `/dashboard`: hub dei tornei, accessibile solo agli utenti autenticati. Il giocatore può creare un nuovo torneo scegliendo la difficoltà e ricevendo un codice condivisibile, oppure unirsi a uno esistente inserendo il codice. In entrambi i casi viene poi reindirizzato a `/game/:id`.
 - Route `/game/:id`: griglia di gioco, utilizzata sia per le partite Casual (id fisso `"casual"`, stato in sessione) sia per le partite Torneo (id numerico, stato nel DB). Mostra la griglia, i siluri rimanenti, l'elenco delle navi e il risultato di ogni lancio. Le posizioni complete delle navi vengono rivelate solo al termine della partita tramite una chiamata separata a `GET /api/games/:id/ships`.
@@ -366,7 +366,7 @@ Body della Response:
 
 - `NavHeader` (in `NavHeader.jsx`): barra di navigazione che mostra il pulsante Login in alto a destra quando l'utente non è autenticato, e i pulsanti Logout e Statistiche quando è autenticato.
 - `LoginForm` (in `AuthComponents.jsx`): form di login con validazione client-side.
-- `HomePage` (in `HomePage.jsx`): schermata principale con i tre pulsanti Casual, Torneo e Login. Mostra il selettore di difficoltà quando si clicca Casual. Se non autenticato e si clicca Torneo, mostra un messaggio che invita al login.
+- `HomePage` (in `HomePage.jsx`): schermata principale con i pulsanti Casual e Torneo. Mostra il selettore di difficoltà quando si clicca Casual. Se non autenticato e si clicca Torneo, mostra un messaggio che invita al login (il login si fa dal pulsante presente nella navbar).
 - `Dashboard` (in `Dashboard.jsx`): hub dei tornei per utenti autenticati. Permette di creare un nuovo torneo e ricevere un codice condivisibile, oppure di unirsi a uno esistente inserendo il codice.
 - `GameBoard` (in `GameBoard.jsx`): griglia NxN interattiva che mostra le celle acqua, colpito e affondato e gestisce i click per lanciare i siluri.
 - `ShipList` (in `ShipList.jsx`): elenco delle navi nella partita corrente con le loro dimensioni e lo stato (affondata o no).
