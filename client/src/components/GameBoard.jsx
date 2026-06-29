@@ -7,8 +7,8 @@ import { Game } from '../models/Game.js';
 // componente della griglia di gioco, montato sulla route /game/:id (vale sia per casual sia per torneo)
 function GameBoard() {
     const { id } = useParams();
-    const [game, setGame] = useState(null); // il modello Game caricato dal server
-    const [ships, setShips] = useState(null); // posizioni delle navi, recuperate solo a partita finita
+    const [game, setGame] = useState({}); // il modello Game (oggetto vuoto finché non è caricato dal server)
+    const [ships, setShips] = useState([]); // posizioni delle navi (array vuoto finché non rivelate a fine partita)
     const [error, setError] = useState(''); // errore locale alla pagina di gioco
 
     // carica lo stato della partita al montaggio e se cambia l'id nell'url
@@ -20,7 +20,7 @@ function GameBoard() {
 
     // a partita finita recupera le posizioni delle navi, una volta sola, per rivelarle sulla griglia
     useEffect(() => {
-        if (game && game.status !== 'attivo' && !ships) {
+        if (game.status && game.status !== 'attivo' && ships.length === 0) {
             API.getShips(id)
                 .then(s => setShips(s))
                 .catch(e => setError(e));
@@ -51,18 +51,16 @@ function GameBoard() {
 
     if (error)
         return <Alert variant="danger">{error}</Alert>;
-    if (!game)
+    if (!game.gridSize)
         return <p>Caricamento della partita...</p>;
 
-    // insieme delle celle occupate da una nave, calcolato solo a partita finita per la rivelazione
+    // insieme delle celle occupate da una nave (vuoto finché le navi non vengono rivelate a fine partita)
     const shipCells = new Set();
-    if (ships) {
-        for (const ship of ships) {
-            for (let i = 0; i < ship.size; i++) {
-                const r = ship.dir === 'V' ? ship.row + i : ship.row;
-                const c = ship.dir === 'V' ? ship.col : ship.col + i;
-                shipCells.add(`${r},${c}`);
-            }
+    for (const ship of ships) {
+        for (let i = 0; i < ship.size; i++) {
+            const r = ship.dir === 'V' ? ship.row + i : ship.row;
+            const c = ship.dir === 'V' ? ship.col : ship.col + i;
+            shipCells.add(`${r},${c}`);
         }
     }
 
