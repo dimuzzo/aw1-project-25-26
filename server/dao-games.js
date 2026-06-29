@@ -1,5 +1,4 @@
-/* Modulo DAO (Data Access Object) per l'accesso alle partite */
-
+/* modulo DAO (Data Access Object) per l'accesso alle partite */
 import db from "./db.js";
 
 export default function GameDao() {

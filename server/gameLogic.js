@@ -1,5 +1,4 @@
-/* Modulo per la gestione della logica di gioco (posizionamento navi) */
-
+/* modulo per la gestione della logica di gioco (posizionamento navi) */
 export default function placeShipsOnGrid(gridSize, shipSizes) {
     // prova fino a 1000 volte a piazzare tutte le navi
     for (let i = 0; i < 1000; i++) {

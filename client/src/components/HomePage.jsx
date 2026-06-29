@@ -12,15 +12,15 @@ const DIFFICULTIES = {
 
 function HomePage(props) {
   const navigate = useNavigate();
-  // il selettore di difficoltà appare solo dopo aver cliccato Casual
+  // il selettore di difficoltà appare solo dopo aver cliccato casual
   const [showCasual, setShowCasual] = useState(false);
-  // mostra l'invito al login dopo aver cliccato Torneo da non autenticati
+  // mostra l'invito al login dopo aver cliccato torneo da non autenticati
   const [torneoHint, setTorneoHint] = useState(false);
   const [difficulty, setDifficulty] = useState("Facile");
 
   const info = DIFFICULTIES[difficulty];
 
-  // gestisce il click sul pulsante Torneo
+  // gestisce il click sul pulsante torneo
   const handleTorneo = () => {
     if (props.loggedIn)
       navigate("/dashboard");
@@ -46,7 +46,7 @@ function HomePage(props) {
             ? <Alert variant="secondary">Per giocare in Casual devi prima fare il logout.</Alert>
             : <Button onClick={() => setShowCasual(true)}>Casual</Button>}
 
-          {/* scelta della difficoltà, compare solo dopo il click su Casual */}
+          {/* scelta della difficoltà, compare solo dopo il click su casual */}
           {!props.loggedIn && showCasual &&
             <Form className="mt-3">
               <Form.Group className="mb-3">

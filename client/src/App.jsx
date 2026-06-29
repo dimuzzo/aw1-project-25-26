@@ -4,36 +4,41 @@ import './App.css';
 
 import { useEffect, useState } from 'react';
 import { Container, Alert } from 'react-bootstrap/';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 
 import NavHeader from "./components/NavHeader.jsx";
 import HomePage from "./components/HomePage.jsx";
 import Dashboard from "./components/Dashboard.jsx";
+import GameBoard from "./components/GameBoard.jsx";
 import { LoginForm } from './components/AuthComponents.jsx';
 import API from "./API.js";
 
 function App() {
   const [user, setUser] = useState({}); //
-  const [loggedIn, setLoggedIn] = useState(false); // indica se l'utente e' loggato
+  const [loggedIn, setLoggedIn] = useState(false); // indica se l'utente è loggato
   const [feedback, setFeedback] = useState(''); // memorizza il feedback da mostrare
+
+  const navigate = useNavigate();
 
   // helper per impostare il feedback da un errore
   const setFeedbackFromError = (err) => {
     let message = '';
-    if (err.message) message = err.message;
+    // le API di gioco lanciano direttamente la stringa del messaggio, quelle auth un oggetto Error
+    if (typeof err === 'string') message = err;
+    else if (err.message) message = err.message;
     else message = "Errore Sconosciuto";
     setFeedback(message); // assumendo un solo messaggio di errore alla volta
   };
 
   useEffect(() => {
-    // controlla se l'utente e' loggato
-    // viene eseguito solo la prima volta che il componente viene montato (cioe', quando la pagina viene (ri)caricata.)
+    // controlla se l'utente è loggato
+    // viene eseguito solo la prima volta che la pagina viene (ri)caricata
     API.getUserInfo()
       .then(user => {
         setLoggedIn(true);
-        setUser(user);  // qui hai le info dell'utente, se e' gia' loggato
+        setUser(user); // info dell'utente, se è già loggato
       }).catch(e => {
-        if (loggedIn)    // stampiamo l'errore solo se lo stato e' inconsistente (cioe', se l'app era configurata per essere loggata)
+        if (loggedIn) // stampa l'errore solo se lo stato è inconsistente (cioè, se l'app era configurata per essere loggata)
           setFeedbackFromError(e);
         setLoggedIn(false); setUser({});
       });
@@ -53,10 +58,14 @@ function App() {
     setLoggedIn(false); setUser({});
   };
 
-  // avvia una partita Casual dalla Home
-  // TODO: chiama l'API per creare la partita e mostra la griglia.
-  const playCasual = (difficulty) => {
-    setFeedback(`Modalità Casual (${difficulty}): avvio partita in arrivo.`);
+  // avvia una partita casual dalla home: crea la partita sul server e va alla griglia
+  const playCasual = async (difficulty) => {
+    try {
+      await API.createGame(difficulty);
+      navigate('/game/casual');
+    } catch (e) {
+      setFeedbackFromError(e);
+    }
   };
 
   return (
@@ -73,6 +82,8 @@ function App() {
         <Route path="/login" element={loggedIn ? <Navigate replace to="/" /> : <LoginForm login={handleLogin} />} />
 
         <Route path="/dashboard" element={loggedIn ? <Dashboard /> : <Navigate replace to="/" />} />
+
+        <Route path="/game/:id" element={<GameBoard />} />
 
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
