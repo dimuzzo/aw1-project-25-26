@@ -10,6 +10,7 @@ import NavHeader from "./components/NavHeader.jsx";
 import HomePage from "./components/HomePage.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import GameBoard from "./components/GameBoard.jsx";
+import StatsTable from "./components/StatsTable.jsx";
 import { LoginForm } from './components/AuthComponents.jsx';
 import API from "./API.js";
 
@@ -84,6 +85,8 @@ function App() {
         <Route path="/dashboard" element={loggedIn ? <Dashboard /> : <Navigate replace to="/" />} />
 
         <Route path="/game/:id" element={<GameBoard />} />
+
+        <Route path="/stats" element={<StatsTable />} />
 
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>

@@ -4,14 +4,14 @@ import { Table, Alert, Button } from 'react-bootstrap';
 import API from '../API.js';
 import { Game } from '../models/Game.js';
 
-// componente della griglia di gioco, montato sulla route /game/:id (vale sia per casual sia per torneo)
+// componente della griglia di gioco, associato alla route /game/:id (vale sia per casual sia per torneo)
 function GameBoard() {
     const { id } = useParams();
     const [game, setGame] = useState({}); // il modello Game (oggetto vuoto finché non è caricato dal server)
     const [ships, setShips] = useState([]); // posizioni delle navi (array vuoto finché non rivelate a fine partita)
     const [error, setError] = useState(''); // errore locale alla pagina di gioco
 
-    // carica lo stato della partita al montaggio e se cambia l'id nell'url
+    // carica lo stato della partita al primo caricamento della pagina e se cambia l'id nell'url
     useEffect(() => {
         API.getGame(id)
             .then(g => setGame(g))
