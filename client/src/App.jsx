@@ -23,11 +23,10 @@ function App() {
 
   // helper per impostare il feedback da un errore
   const setFeedbackFromError = (err) => {
-    let message = '';
+    let message = "Errore Sconosciuto";
     // le API di gioco lanciano direttamente la stringa del messaggio, quelle auth un oggetto Error
     if (typeof err === 'string') message = err;
     else if (err.message) message = err.message;
-    else message = "Errore Sconosciuto";
     setFeedback(message); // assumendo un solo messaggio di errore alla volta
   };
 
@@ -41,7 +40,8 @@ function App() {
       }).catch(e => {
         if (loggedIn) // stampa l'errore solo se lo stato è inconsistente (cioè, se l'app era configurata per essere loggata)
           setFeedbackFromError(e);
-        setLoggedIn(false); setUser({});
+        setLoggedIn(false);
+        setUser({});
       });
   }, []);
 
@@ -49,14 +49,16 @@ function App() {
   // richiede username e password dentro un oggetto "credentials"
   const handleLogin = async (credentials) => {
     const user = await API.logIn(credentials);
-    setUser(user); setLoggedIn(true);
+    setUser(user);
+    setLoggedIn(true);
     setFeedback("Benvenuto, " + user.username);
   };
 
   // funzione usata per gestire il processo di logout.
   const handleLogout = async () => {
     await API.logOut();
-    setLoggedIn(false); setUser({});
+    setLoggedIn(false);
+    setUser({});
   };
 
   // avvia una partita casual dalla home: crea la partita sul server e va alla griglia

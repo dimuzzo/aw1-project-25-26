@@ -13,7 +13,7 @@ export function LoginForm(props) {
 
         try {
             await props.login(credentials); // login in api.js non è sincrono
-        } catch (error) {
+        } catch {
             setError('Credenziali non valide'); // assume un solo messaggio di errore alla volta
         }
     }

@@ -111,6 +111,9 @@ db.serialize(() => {
 
 
 db.close((err) => {
-  if (err) { console.error(err); process.exit(1); }
+  if (err) {
+    console.error(err);
+    process.exit(1);
+  }
   console.log('Database created and seeded: battaglia_navale.db');
 });
