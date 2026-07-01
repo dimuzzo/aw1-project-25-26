@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Table, Alert, Button } from 'react-bootstrap';
 import API from '../API.js';
 import { Game } from '../models/Game.js';
+import ShipList from './ShipList.jsx';
 
 // componente della griglia di gioco, associato alla route /game/:id (vale sia per casual sia per torneo)
 function GameBoard() {
@@ -90,6 +91,7 @@ function GameBoard() {
                         : 'Hai perso! I siluri sono esauriti.'}
                 </Alert>
             }
+            <ShipList ships={game.ships} shots={game.shots} />
             <Table bordered className="game-board">
                 <tbody>
                     {Array.from({ length: game.gridSize }, (_, row) =>

@@ -369,7 +369,7 @@ Body della Response:
 - `HomePage` (in `HomePage.jsx`): schermata principale con i pulsanti Casual e Torneo. Mostra il selettore di difficoltà quando si clicca Casual. Se non autenticato e si clicca Torneo, mostra un messaggio che invita al login (il login si fa dal pulsante presente nella navbar).
 - `Dashboard` (in `Dashboard.jsx`): hub dei tornei per utenti autenticati. Permette di creare un nuovo torneo e ricevere un codice condivisibile, oppure di unirsi a uno esistente inserendo il codice.
 - `GameBoard` (in `GameBoard.jsx`): griglia NxN interattiva che mostra le celle acqua, colpito e affondato e gestisce i click per lanciare i siluri.
-- `ShipList` (in `ShipList.jsx`): elenco delle navi nella partita corrente con le loro dimensioni e lo stato (affondata o no).
+- `ShipList` (in `ShipList.jsx`): elenco delle navi ancora da affondare nella partita corrente, ognuna con la propria dimensione. Ogni volta che una nave viene affondata sparisce dalla lista, dato che il client calcola la dimensione delle navi affondate misurandole a partire dalle celle colpite con esito 'affondato', senza mai ricevere le posizioni dal server.
 - `StatsTable` (in `StatsTable.jsx`): tabella delle statistiche suddivisa per giocatore e per livello di difficoltà.
 
 ## Screenshot

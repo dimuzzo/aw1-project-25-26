@@ -235,3 +235,9 @@
   /* nave rivelata a fine partita, mai colpita */
   color: #fff;
 }
+
+.ship-cell {
+  /* quadratini che disegnano la dimensione di una nave nella lista */
+  color: #495057;
+  margin-left: 2px;
+}
