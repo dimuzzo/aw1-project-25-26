@@ -14,11 +14,21 @@ function HomePage(props) {
   const navigate = useNavigate();
   // il selettore di difficoltà appare solo dopo aver cliccato casual
   const [showCasual, setShowCasual] = useState(false);
+  // mostra l'avviso di logout dopo aver cliccato casual da autenticati
+  const [casualHint, setCasualHint] = useState(false);
   // mostra l'invito al login dopo aver cliccato torneo da non autenticati
   const [torneoHint, setTorneoHint] = useState(false);
   const [difficulty, setDifficulty] = useState("Facile");
 
   const info = DIFFICULTIES[difficulty];
+
+  // gestisce il click sul pulsante casual, dato che chi è loggato non può giocare in casual
+  const handleCasual = () => {
+    if (props.loggedIn)
+      setCasualHint(true);
+    else
+      setShowCasual(true);
+  };
 
   // gestisce il click sul pulsante torneo
   const handleTorneo = () => {
@@ -33,18 +43,20 @@ function HomePage(props) {
       <Row className="mb-4">
         <Col>
           <h1>Battaglia Navale</h1>
-          <p className="lead">Affonda tutte le navi nascoste prima di restare senza siluri.</p>
+          <p className="lead">Affonda tutte le navi nascoste prima di restare senza siluri!</p>
         </Col>
       </Row>
 
       <Row>
-        {/* modalità casual: solo per chi non è loggato (anonima, niente dati salvati) */}
+        {/* casual: solo per chi non è loggato (anonima, niente dati salvati) */}
         <Col md={6}>
           <h2>Casual</h2>
           <p>Partita singola e anonima. Nessun dato viene salvato.</p>
-          {props.loggedIn
-            ? <Alert variant="secondary">Per giocare in Casual devi prima fare il logout.</Alert>
-            : <Button onClick={() => setShowCasual(true)}>Casual</Button>}
+          <Button onClick={handleCasual}>Avvia partita Casual</Button>
+
+          {/* avviso per chi è loggato: la casual è solo per utenti anonimi */}
+          {props.loggedIn && casualHint &&
+            <Alert variant="secondary" className="mt-3">Esci dal tuo account per giocare in Casual.</Alert>}
 
           {/* scelta della difficoltà, compare solo dopo il click su casual */}
           {!props.loggedIn && showCasual &&
@@ -68,13 +80,13 @@ function HomePage(props) {
             </Form>}
         </Col>
 
-        {/* modalità torneo: serve l'accesso, la gestione vera è nella dashboard */}
+        {/* torneo: serve l'accesso, la gestione vera è nella dashboard */}
         <Col md={6}>
           <h2>Torneo</h2>
-          <p>Sfida gli altri sulla stessa griglia, condivisa tramite un codice. Serve l'accesso.</p>
-          <Button onClick={handleTorneo}>Torneo</Button>
+          <p>Sfida altri utenti sulla stessa griglia, condivisa tramite un codice. Serve l'accesso.</p>
+          <Button onClick={handleTorneo}>Crea o Entra in un Torneo</Button>
           {torneoHint && !props.loggedIn &&
-            <Alert variant="secondary" className="mt-3">Accedi per partecipare a un torneo.</Alert>}
+            <Alert variant="secondary" className="mt-3">Accedi per partecipare a un Torneo.</Alert>}
         </Col>
       </Row>
     </>

@@ -3,7 +3,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import './App.css';
 
 import { useEffect, useState } from 'react';
-import { Container, Alert } from 'react-bootstrap/';
+import { Container, Row, Col, Alert } from 'react-bootstrap/';
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 
 import NavHeader from "./components/NavHeader.jsx";
@@ -51,7 +51,7 @@ function App() {
     const user = await API.logIn(credentials);
     setUser(user);
     setLoggedIn(true);
-    setFeedback("Benvenuto, " + user.username);
+    setFeedback("Avvia subito un torneo, " + user.username);
   };
 
   // funzione usata per gestire il processo di logout.
@@ -72,27 +72,31 @@ function App() {
   };
 
   return (
-    <Container fluid className="main_container">
+    <>
       <NavHeader
         user={user}
         loggedIn={loggedIn}
         logout={handleLogout}
       />
-      {feedback && <Alert variant="info" dismissible onClose={() => setFeedback('')}>{feedback}</Alert>}
-      <Routes>
-        <Route path="/" element={<HomePage loggedIn={loggedIn} playCasual={playCasual} />} />
+      <Container fluid className="mt-3">
+        {feedback && <Row><Col md={12}>
+          <Alert variant="info" dismissible onClose={() => setFeedback('')}>{feedback}</Alert>
+        </Col></Row>}
+        <Routes>
+          <Route path="/" element={<HomePage loggedIn={loggedIn} playCasual={playCasual} />} />
 
-        <Route path="/login" element={loggedIn ? <Navigate replace to="/" /> : <LoginForm login={handleLogin} />} />
+          <Route path="/login" element={loggedIn ? <Navigate replace to="/" /> : <LoginForm login={handleLogin} />} />
 
-        <Route path="/dashboard" element={loggedIn ? <Dashboard /> : <Navigate replace to="/" />} />
+          <Route path="/dashboard" element={loggedIn ? <Dashboard /> : <Navigate replace to="/" />} />
 
-        <Route path="/game/:id" element={<GameBoard />} />
+          <Route path="/game/:id" element={<GameBoard />} />
 
-        <Route path="/stats" element={<StatsTable />} />
+          <Route path="/stats" element={<StatsTable />} />
 
-        <Route path="*" element={<Navigate replace to="/" />} />
-      </Routes>
-    </Container>
+          <Route path="*" element={<Navigate replace to="/" />} />
+        </Routes>
+      </Container>
+    </>
   )
 }
 

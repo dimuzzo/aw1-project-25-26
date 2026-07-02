@@ -4,18 +4,19 @@ import { LoginButton, LogoutButton } from "./AuthComponents.jsx";
 
 function NavHeader(props) {
     return (
-        <Navbar bg="primary" data-bs-theme="dark" className="mb-3">
+        <Navbar bg="primary" data-bs-theme="dark" className="shadow-sm">
             <Container fluid>
-                {/* nome del gioco cliccabile che porta alla homepage */}
-                <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
+                {/* nome del gioco cliccabile che porta alla homepage (come week11: Link con classe navbar-brand) */}
+                <Link to="/" className="navbar-brand d-flex align-items-center fw-semibold">
                     <i className="bi bi-water me-2"></i>
                     Battaglia Navale
-                </Navbar.Brand>
-                {/* pulsante statistiche (per tutti), nome utente se loggato e pulsante login/logout */}
-                <div className="d-flex align-items-center gap-3">
-                    <Link to="/stats" className="link-light text-decoration-none">Statistiche</Link>
+                </Link>
+                {/* statistiche a sinistra (per tutti) */}
+                <Link to="/stats" className="stats-link me-auto">Statistiche</Link>
+                {/* pulsante login/logout e saluto se loggato a destra */}
+                <div className="d-flex align-items-center gap-2">
                     {props.loggedIn
-                        ? <span className="text-light me-2">Ciao, {props.user.username}</span>
+                        ? <span className="navbar-text text-light me-1">Capitan {props.user.username} a rapporto!</span>
                         : null}
                     {props.loggedIn
                         ? <LogoutButton logout={props.logout} />

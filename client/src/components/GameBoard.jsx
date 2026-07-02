@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Table, Alert, Button } from 'react-bootstrap';
+import { Table, Alert, Button, Row, Col } from 'react-bootstrap';
 import API from '../API.js';
 import { Game } from '../models/Game.js';
 import ShipList from './ShipList.jsx';
@@ -83,7 +83,10 @@ function GameBoard() {
     return (
         <>
             <h2>Battaglia Navale</h2>
-            <p>Siluri rimasti: <strong>{game.torpedoesRemaining}</strong></p>
+            <p className="lead">
+                <i className="bi bi-record-circle me-2"></i>
+                Siluri rimasti: <strong>{game.torpedoesRemaining}</strong>
+            </p>
             {over &&
                 <Alert variant={game.status === 'vinto' ? 'success' : 'danger'}>
                     {game.status === 'vinto'
@@ -91,24 +94,32 @@ function GameBoard() {
                         : 'Hai perso! I siluri sono esauriti.'}
                 </Alert>
             }
-            <ShipList ships={game.ships} shots={game.shots} />
-            <Table bordered className="game-board">
-                <tbody>
-                    {Array.from({ length: game.gridSize }, (_, row) =>
-                        <tr key={row}>
-                            {Array.from({ length: game.gridSize }, (_, col) => {
-                                const { className, icon } = describeCell(row, col);
-                                return (
-                                    <td key={col} className={className} onClick={() => handleShot(row, col)}>
-                                        {icon && <i className={`bi ${icon}`}></i>}
-                                    </td>
-                                );
-                            })}
-                        </tr>
-                    )}
-                </tbody>
-            </Table>
-            {over && <Link to="/"><Button variant="primary">Torna alla home</Button></Link>}
+            <Row>
+                {/* griglia a sinistra: occupa solo lo spazio che le serve */}
+                <Col md="auto">
+                    <Table bordered className="game-board">
+                        <tbody>
+                            {Array.from({ length: game.gridSize }, (_, row) =>
+                                <tr key={row}>
+                                    {Array.from({ length: game.gridSize }, (_, col) => {
+                                        const { className, icon } = describeCell(row, col);
+                                        return (
+                                            <td key={col} className={className} onClick={() => handleShot(row, col)}>
+                                                {icon && <i className={`bi ${icon}`}></i>}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </Col>
+                {/* lista delle navi ancora da affondare a destra */}
+                <Col md={4}>
+                    <ShipList ships={game.ships} shots={game.shots} />
+                </Col>
+            </Row>
+            {over && <Link to="/"><Button variant="primary" className="mt-3">Torna alla home</Button></Link>}
         </>
     );
 }
