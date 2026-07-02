@@ -3,7 +3,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import './App.css';
 
 import { useEffect, useState } from 'react';
-import { Container, Row, Col, Alert } from 'react-bootstrap/';
+import { Container, Row, Col, Alert } from 'react-bootstrap';
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 
 import NavHeader from "./components/NavHeader.jsx";

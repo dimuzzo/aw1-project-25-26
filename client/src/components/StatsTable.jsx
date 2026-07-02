@@ -49,7 +49,7 @@ function StatsTable() {
 function DifficultySection(props) {
   return (
     <>
-      <h2 className="pb-2 border-bottom">Livello {props.difficulty}</h2>
+      <h2>Livello {props.difficulty}</h2>
       {props.rows.length === 0
         ? <p className="text-muted mb-5">Ancora nessuna partita giocata a questo livello.</p>
         : <Table striped bordered hover className="mb-5">

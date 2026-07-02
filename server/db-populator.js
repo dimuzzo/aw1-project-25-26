@@ -59,8 +59,8 @@ db.serialize(() => {
     ['charlie', charlie.hash, charlie.salt]);
 
 
-  // seed dei tornei (Facile 7x7, navi [2,2,3,3], siluri 18)
-  // navi posizionate in modo valido, senza adiacenza (distanza tra due navi >= 2)
+  // seed dei tornei 
+  // torneo Facile 7x7, navi [2,2,3,3], siluri 18
   const ships1 = JSON.stringify([
     { row: 0, col: 0, size: 2, dir: 'H' },
     { row: 0, col: 4, size: 2, dir: 'H' },
@@ -75,15 +75,47 @@ db.serialize(() => {
     { row: 4, col: 4, size: 3, dir: 'H' }
   ]);
 
+  // torneo Intermedio 10x10, navi [2,2,3,3,4,4,5], siluri 28
+  const ships3 = JSON.stringify([
+    { row: 0, col: 0, size: 5, dir: 'H' },
+    { row: 0, col: 7, size: 2, dir: 'H' },
+    { row: 2, col: 0, size: 4, dir: 'H' },
+    { row: 2, col: 5, size: 3, dir: 'H' },
+    { row: 4, col: 0, size: 4, dir: 'H' },
+    { row: 4, col: 5, size: 3, dir: 'H' },
+    { row: 6, col: 0, size: 2, dir: 'H' }
+  ]);
+
+  // torneo Difficile 14x14, navi [2,2,2,2,3,3,3,4,4,4,5,5], siluri 45
+  const ships4 = JSON.stringify([
+    { row: 0, col: 0, size: 5, dir: 'H' },
+    { row: 0, col: 7, size: 5, dir: 'H' },
+    { row: 2, col: 0, size: 4, dir: 'H' },
+    { row: 2, col: 5, size: 4, dir: 'H' },
+    { row: 2, col: 10, size: 4, dir: 'H' },
+    { row: 4, col: 0, size: 3, dir: 'H' },
+    { row: 4, col: 4, size: 3, dir: 'H' },
+    { row: 4, col: 8, size: 3, dir: 'H' },
+    { row: 6, col: 0, size: 2, dir: 'H' },
+    { row: 6, col: 3, size: 2, dir: 'H' },
+    { row: 6, col: 6, size: 2, dir: 'H' },
+    { row: 6, col: 9, size: 2, dir: 'H' }
+  ]);
+
   db.run(`INSERT OR IGNORE INTO tournaments(code, difficulty, grid_size, ships)
           VALUES(?,?,?,?)`, ['NAVALE01', 'Facile', 7, ships1]);
   db.run(`INSERT OR IGNORE INTO tournaments(code, difficulty, grid_size, ships)
           VALUES(?,?,?,?)`, ['NAVALE02', 'Facile', 7, ships2]);
+  db.run(`INSERT OR IGNORE INTO tournaments(code, difficulty, grid_size, ships)
+          VALUES(?,?,?,?)`, ['NAVALE03', 'Intermedio', 10, ships3]);
+  db.run(`INSERT OR IGNORE INTO tournaments(code, difficulty, grid_size, ships)
+          VALUES(?,?,?,?)`, ['NAVALE04', 'Difficile', 14, ships4]);
 
 
-  // seed delle partite (alice e bob hanno giocato vinte e perse)
+  // seed delle partite
   // gli id vengono recuperati tramite subquery, dato che lastID non è disponibile per SELECT
 
+  // NAVALE01 e NAVALE02 - Facile
   // alice ha vinto NAVALE01 (18 siluri, ne rimangono 5)
   db.run(`INSERT OR IGNORE INTO games(user_id, tournament_id, torpedoes_remaining, status)
           SELECT u.id, t.id, 5, 'vinto'
@@ -107,6 +139,32 @@ db.serialize(() => {
           SELECT u.id, t.id, 10, 'vinto'
           FROM users u, tournaments t
           WHERE u.username='bob' AND t.code='NAVALE02'`);
+
+  // NAVALE03 - Intermedio
+  // alice ha vinto NAVALE03 (28 siluri, ne rimangono 9)
+  db.run(`INSERT OR IGNORE INTO games(user_id, tournament_id, torpedoes_remaining, status)
+          SELECT u.id, t.id, 9, 'vinto'
+          FROM users u, tournaments t
+          WHERE u.username='alice' AND t.code='NAVALE03'`);
+
+  // bob ha perso NAVALE03
+  db.run(`INSERT OR IGNORE INTO games(user_id, tournament_id, torpedoes_remaining, status)
+          SELECT u.id, t.id, 0, 'perso'
+          FROM users u, tournaments t
+          WHERE u.username='bob' AND t.code='NAVALE03'`);
+
+  // NAVALE04 - Difficile
+  // alice ha perso NAVALE04
+  db.run(`INSERT OR IGNORE INTO games(user_id, tournament_id, torpedoes_remaining, status)
+          SELECT u.id, t.id, 0, 'perso'
+          FROM users u, tournaments t
+          WHERE u.username='alice' AND t.code='NAVALE04'`);
+
+  // bob ha vinto NAVALE04 (45 siluri, ne rimangono 14)
+  db.run(`INSERT OR IGNORE INTO games(user_id, tournament_id, torpedoes_remaining, status)
+          SELECT u.id, t.id, 14, 'vinto'
+          FROM users u, tournaments t
+          WHERE u.username='bob' AND t.code='NAVALE04'`);
 });
 
 
