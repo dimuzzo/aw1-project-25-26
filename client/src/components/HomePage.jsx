@@ -49,14 +49,14 @@ function HomePage(props) {
 
       <Row>
         {/* casual: solo per chi non è loggato (anonima, niente dati salvati) */}
-        <Col md={6}>
+        <Col md={6} className="mb-4 mb-md-0">
           <h2>Casual</h2>
           <p>Partita singola e anonima. Nessun dato viene salvato.</p>
-          <Button onClick={handleCasual}>Avvia partita Casual</Button>
+          <Button onClick={handleCasual}>Nuova partita Casual</Button>
 
           {/* avviso per chi è loggato: la casual è solo per utenti anonimi */}
           {props.loggedIn && casualHint &&
-            <Alert variant="secondary" className="mt-3">Esci dal tuo account per giocare in Casual.</Alert>}
+            <div><Alert variant="secondary" className="mt-3 d-inline-block">Esci dal tuo account per giocare in Casual.</Alert></div>}
 
           {/* scelta della difficoltà, compare solo dopo il click su casual */}
           {!props.loggedIn && showCasual &&
@@ -86,7 +86,7 @@ function HomePage(props) {
           <p>Sfida altri utenti sulla stessa griglia, condivisa tramite un codice. Serve l'accesso.</p>
           <Button onClick={handleTorneo}>Crea o Entra in un Torneo</Button>
           {torneoHint && !props.loggedIn &&
-            <Alert variant="secondary" className="mt-3">Accedi per partecipare a un Torneo.</Alert>}
+            <div><Alert variant="secondary" className="mt-3 d-inline-block">Accedi per partecipare a un Torneo.</Alert></div>}
         </Col>
       </Row>
     </>

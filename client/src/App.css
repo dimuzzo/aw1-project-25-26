@@ -16,40 +16,88 @@
   font-size: 18px;
 }
 
-.cell-water {
+.game-board .cell-water {
   /* cella ancora da colpire */
-  background-color: #cfe8ff;
+  background-color: #ffffff;
   cursor: pointer;
   transition: background-color 0.15s;
 }
 
-.cell-water:hover {
+.game-board .cell-water:hover {
   /* evidenzia la cella sotto il puntatore */
-  background-color: #6ea8fe;
+  background-color: #e9ecef;
 }
 
-.cell-miss {
-  /* tiro a vuoto (acqua): pallino grigio su bianco */
+.game-board .cell-miss {
+  /* tiro a vuoto (acqua): goccia azzurra su bianco */
   background-color: #ffffff;
-  color: #6c757d;
+  color: #0d6efd;
 }
 
-.cell-hit {
-  /* colpito */
-  background-color: #fd7e14;
-  color: #fff;
+.game-board .cell-hit {
+  /* colpito: cerchio arancione su bianco */
+  background-color: #ffffff;
+  color: #fd7e14;
 }
 
-.cell-sunk {
-  /* affondato */
-  background-color: #dc3545;
-  color: #fff;
+.game-board .cell-sunk {
+  /* affondato: fiamma rossa su bianco */
+  background-color: #ffffff;
+  color: #dc3545;
 }
 
-.cell-ship {
+.game-board .cell-ship {
   /* nave rivelata a fine partita, mai colpita */
-  background-color: #495057;
-  color: #fff;
+  background-color: #ffffff;
+  color: #495057;
+}
+
+/* legenda della griglia */
+.game-legend {
+  font-size: 0.95rem;
+}
+
+.game-legend .legend-item {
+  margin-right: 1rem;
+  white-space: nowrap;
+}
+
+.game-legend i {
+  font-size: 18px;
+  vertical-align: -2px;
+}
+
+.legend-empty {
+  /* quadratino di una cella ancora da colpire */
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background-color: #ffffff;
+  border: 1px solid #212529;
+  vertical-align: -3px;
+}
+
+.legend-water {
+  color: #0d6efd;
+}
+
+.legend-hit {
+  color: #fd7e14;
+}
+
+.legend-sunk {
+  color: #dc3545;
+}
+
+.legend-ship {
+  color: #495057;
+}
+
+.ships-table {
+  /* la tabella delle navi da affondare */
+  font-size: 0.95rem;
+  width: auto;
 }
 
 .ship-cell {
@@ -58,7 +106,7 @@
   margin-left: 2px;
 }
 
-/* statistiche: scuro a riposo, bianco al passaggio del cursore */
+/* statistiche, diventa bianco al passaggio del cursore */
 .stats-link {
   color: #495057;
   font-weight: 500;

@@ -8,7 +8,7 @@
 - Route `/login`: pagina di login con un form per username e password. Dopo il login riuscito l'utente viene reindirizzato alla homepage.
 - Route `/dashboard`: hub dei tornei, accessibile solo agli utenti autenticati. Il giocatore può creare un nuovo torneo scegliendo la difficoltà e ricevendo un codice condivisibile, oppure unirsi a uno esistente inserendo il codice. In entrambi i casi viene poi reindirizzato a `/game/:id`.
 - Route `/game/:id`: griglia di gioco, utilizzata sia per le partite Casual (id fisso `"casual"`, stato in sessione) sia per le partite Torneo (id numerico, stato nel DB). Mostra la griglia, i siluri rimanenti, l'elenco delle navi e il risultato di ogni lancio. Le posizioni complete delle navi vengono rivelate solo al termine della partita tramite una chiamata separata a `GET /api/games/:id/ships`.
-- Route `/stats`: pagina delle statistiche, pubblica e accessibile a tutti (anche non autenticati) tramite il pulsante Statistiche nella navbar. Mostra, per ogni giocatore e per ogni livello di difficoltà, le partite giocate, vinte e perse e la percentuale di vittorie.
+- Route `/stats` (e `/stats/:level`): pagina delle statistiche, pubblica e accessibile a tutti (anche non autenticati) tramite il pulsante Statistiche nella navbar. Mostra, per ogni giocatore e per ogni livello di difficoltà, le partite giocate, vinte e perse e la percentuale di vittorie. Una barra di filtri permette di vedere tutti i livelli insieme (`/stats`) oppure un solo livello (`/stats/:level`, per esempio `/stats/Facile`).
 - Route `*`: catch-all, reindirizza a `/`.
 
 ## API Server
@@ -370,7 +370,8 @@ Body della Response:
 - `Dashboard` (in `Dashboard.jsx`): hub dei tornei per utenti autenticati. Permette di creare un nuovo torneo e ricevere un codice condivisibile, oppure di unirsi a uno esistente inserendo il codice.
 - `GameBoard` (in `GameBoard.jsx`): griglia NxN interattiva che mostra le celle acqua, colpito e affondato e gestisce i click per lanciare i siluri.
 - `ShipList` (in `ShipList.jsx`): elenco delle navi ancora da affondare nella partita corrente, ognuna con la propria dimensione. Ogni volta che una nave viene affondata sparisce dalla lista, dato che il client calcola la dimensione delle navi affondate misurandole a partire dalle celle colpite con esito 'affondato', senza mai ricevere le posizioni dal server.
-- `StatsTable` (in `StatsTable.jsx`): tabella delle statistiche suddivisa per giocatore e per livello di difficoltà.
+- `StatsTable` (in `StatsTable.jsx`): tabella delle statistiche suddivisa per giocatore e per livello di difficoltà. Legge il livello selezionato dall'URL e mostra tutte le tabelle o solo quella del livello scelto.
+- `Filters` (in `Filters.jsx`): barra di filtri per livello di difficoltà nella pagina delle statistiche. Ciascun filtro è un `NavLink` che naviga a `/stats` o `/stats/:level` ed evidenzia da solo il filtro attivo.
 
 ## Screenshot
 

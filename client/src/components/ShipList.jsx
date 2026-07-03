@@ -1,4 +1,4 @@
-import { ListGroup, ListGroupItem } from 'react-bootstrap';
+import { Table } from 'react-bootstrap';
 
 // misura la dimensione di una nave affondata partendo dalla cella con esito 'affondato':
 // si espande nelle quattro direzioni contando le celle contigue già colpite. 
@@ -42,20 +42,22 @@ function ShipList(props) {
     return (
         <>
             <h5>Navi da affondare ({remaining.length})</h5>
-            <ListGroup variant="flush">
-                {remaining.map((size, index) => <ShipInList key={index} size={size} />)}
-            </ListGroup>
+            <Table borderless size="sm" className="ships-table">
+                <tbody>
+                    {remaining.map((size, index) => <ShipInList key={index} size={size} />)}
+                </tbody>
+            </Table>
         </>
     );
 }
 
-// una nave, mostrata con la sua dimensione e altrettanti quadratini
+// una nave con la sua dimensione (rappresentata da quadratini)
 function ShipInList(props) {
     return (
-        <ListGroupItem>
-            Nave da {props.size}{' '}
-            {[...Array(props.size)].map((el, index) => <i key={index} className="bi bi-square-fill ship-cell" />)}
-        </ListGroupItem>
+        <tr>
+            <td>Nave da {props.size}</td>
+            <td>{[...Array(props.size)].map((el, index) => <i key={index} className="bi bi-square-fill ship-cell" />)}</td>
+        </tr>
     );
 }
 

@@ -74,8 +74,8 @@ function GameBoard(props) {
     const describeCell = (row, col) => {
         const shot = game.shots.find(s => s.row === row && s.col === col);
         if (shot) {
-            if (shot.result === 'acqua') return { className: 'cell cell-miss', icon: 'bi-record-circle' };
-            if (shot.result === 'colpito') return { className: 'cell cell-hit', icon: 'bi-x-lg' };
+            if (shot.result === 'acqua') return { className: 'cell cell-miss', icon: 'bi-droplet-fill' };
+            if (shot.result === 'colpito') return { className: 'cell cell-hit', icon: 'bi-record-circle' };
             return { className: 'cell cell-sunk', icon: 'bi-fire' }; // affondato
         }
         // cella di una nave mai colpita, mostrata solo a partita finita
@@ -87,20 +87,28 @@ function GameBoard(props) {
 
     return (
         <>
-            <h2>Battaglia Navale</h2>
-            <p className="lead">
-                <i className="bi bi-record-circle me-2"></i>
-                Siluri rimasti: <strong>{game.torpedoesRemaining}</strong>
-            </p>
             {over &&
                 <Alert variant={game.status === 'vinto' ? 'success' : 'danger'}>
                     {game.status === 'vinto'
-                        ? 'Hai vinto! Tutte le navi sono state affondate.'
-                        : 'Hai perso! I siluri sono esauriti.'}
+                        ? 'Hai vinto! Sei riuscito ad affondare tutte le navi nemiche.'
+                        : 'Hai perso! Sfortunatamente hai esaurito tutti i siluri...'}
                 </Alert>
             }
+            {/* legenda delle celle */}
+            <div className="game-legend mb-2">
+                <span className="legend-item"><span className="legend-empty"></span> Da colpire</span>
+                <span className="legend-item"><i className="bi bi-droplet-fill legend-water"></i> Acqua</span>
+                <span className="legend-item"><i className="bi bi-record-circle legend-hit"></i> Colpito</span>
+                <span className="legend-item"><i className="bi bi-fire legend-sunk"></i> Affondato</span>
+                <span className="legend-item"><i className="bi bi-square-fill legend-ship"></i> Nave rivelata</span>
+            </div>
+            {/* siluri rimasti */}
+            <p className="lead">
+                <i className="bi bi-crosshair me-2"></i>
+                Siluri rimasti: <strong>{game.torpedoesRemaining}</strong>
+            </p>
             <Row>
-                {/* griglia a sinistra: occupa solo lo spazio che le serve */}
+                {/* griglia a sinistra, occupa solo lo spazio che le serve */}
                 <Col md="auto">
                     <Table bordered className="game-board">
                         <tbody>
@@ -119,12 +127,12 @@ function GameBoard(props) {
                         </tbody>
                     </Table>
                 </Col>
-                {/* lista delle navi ancora da affondare a destra */}
+                {/* lista delle navi da affondare a destra, con il pulsante sotto la tabella */}
                 <Col md={4}>
                     <ShipList ships={game.ships} shots={game.shots} />
+                    {over && <Link to="/"><Button variant="primary" className="mt-3">Torna alla home</Button></Link>}
                 </Col>
             </Row>
-            {over && <Link to="/"><Button variant="primary" className="mt-3">Torna alla home</Button></Link>}
         </>
     );
 }

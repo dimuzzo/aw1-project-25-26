@@ -93,6 +93,8 @@ function App() {
 
           <Route path="/stats" element={<StatsTable />} />
 
+          <Route path="/stats/:level" element={<StatsTable />} />
+
           <Route path="*" element={<Navigate replace to="/" />} />
         </Routes>
       </Container>

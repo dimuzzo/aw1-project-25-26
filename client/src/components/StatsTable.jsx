@@ -1,6 +1,8 @@
 import { Row, Col, Table, Alert } from "react-bootstrap";
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import API from "../API.js";
+import Filters from "./Filters.jsx";
 
 // le tre difficoltà, nell'ordine in cui vengono visualizzate
 const DIFFICULTIES = ["Facile", "Intermedio", "Difficile"];
@@ -10,6 +12,7 @@ const DIFFICULTIES = ["Facile", "Intermedio", "Difficile"];
 function StatsTable() {
   const [stats, setStats] = useState([]); // righe di statistiche ricevute dal server
   const [error, setError] = useState(""); // errore locale alla pagina
+  const { level } = useParams(); // livello selezionato dalla barra dei filtri (undefined se "tutti i livelli")
 
   // carica le statistiche dal server al primo caricamento della pagina
   useEffect(() => {
@@ -17,6 +20,9 @@ function StatsTable() {
       .then(s => setStats(s))
       .catch(e => setError(e));
   }, []);
+
+  // livelli da mostrare: solo quello selezionato, oppure tutti se non c'è un filtro valido nell'URL
+  const shown = DIFFICULTIES.includes(level) ? [level] : DIFFICULTIES;
 
   return (
     <>
@@ -30,9 +36,14 @@ function StatsTable() {
       {error && <Alert variant="danger" dismissible onClose={() => setError("")}>{error}</Alert>}
 
       <Row>
-        <Col lg={8}>
-          {/* una sezione per ogni livello di difficoltà */}
-          {DIFFICULTIES.map((difficulty) =>
+        {/* sidebar con i filtri per livello, a sinistra */}
+        <Col md={3}>
+          <Filters levels={DIFFICULTIES} />
+        </Col>
+        {/* le tabelle delle statistiche, a destra */}
+        <Col md={9} lg={8}>
+          {/* una sezione per ogni livello da mostrare */}
+          {shown.map((difficulty) =>
             <DifficultySection
               key={difficulty}
               difficulty={difficulty}
