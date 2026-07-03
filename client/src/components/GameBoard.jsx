@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { Table, Alert, Button, Row, Col } from 'react-bootstrap';
 import API from '../API.js';
 import { Game } from '../models/Game.js';
 import ShipList from './ShipList.jsx';
 
 // componente della griglia di gioco, associato alla route /game/:id (vale sia per casual sia per torneo)
-function GameBoard() {
+function GameBoard(props) {
     const { id } = useParams();
     const [game, setGame] = useState({}); // il modello Game (oggetto vuoto finché non è caricato dal server)
     const [ships, setShips] = useState([]); // posizioni delle navi (array vuoto finché non rivelate a fine partita)
@@ -49,6 +49,11 @@ function GameBoard() {
             setError(e);
         }
     };
+
+    // se l'utente non è loggato, non può accedere alle partite di torneo
+    // e nel caso uscisse dal suo account durante una partita di torneo, viene reindirizzato alla home page
+    if (id !== 'casual' && !props.loggedIn)
+        return <Navigate replace to="/" />;
 
     if (error)
         return <Alert variant="danger">{error}</Alert>;

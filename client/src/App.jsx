@@ -89,7 +89,7 @@ function App() {
 
           <Route path="/dashboard" element={loggedIn ? <Dashboard /> : <Navigate replace to="/" />} />
 
-          <Route path="/game/:id" element={<GameBoard />} />
+          <Route path="/game/:id" element={<GameBoard loggedIn={loggedIn} />} />
 
           <Route path="/stats" element={<StatsTable />} />
 
