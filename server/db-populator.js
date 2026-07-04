@@ -1,14 +1,17 @@
+/* script per la creazione delle tabelle e l'inserimento dei dati iniziali (utenti, tornei, partite) - node db-populator.js */
 import sqlite3 from 'sqlite3';
 import crypto from 'crypto';
 
 const db = new sqlite3.Database('battaglia_navale.db');
 
+// genera salt casuale e hash della password (scrypt), come richiesto dall'autenticazione
 const hashPassword = (password) => {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.scryptSync(password, salt, 32).toString('hex');
   return { hash, salt };
 };
 
+// db.serialize garantisce che le query vengano eseguite in ordine, una alla volta
 db.serialize(() => {
   // tabelle
   db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -47,6 +50,7 @@ db.serialize(() => {
 
 
   // seed degli utenti
+
   const alice = hashPassword('alice123');
   const bob = hashPassword('bob123');
   const charlie = hashPassword('charlie123');
@@ -59,7 +63,9 @@ db.serialize(() => {
     ['charlie', charlie.hash, charlie.salt]);
 
 
-  // seed dei tornei 
+  // seed dei tornei
+  // le posizioni delle navi sono fisse, sempre dentro la griglia e mai adiacenti tra loro
+
   // torneo Facile 7x7, navi [2,2,3,3], siluri 18
   const ships1 = JSON.stringify([
     { row: 0, col: 0, size: 2, dir: 'H' },
@@ -113,7 +119,8 @@ db.serialize(() => {
 
 
   // seed delle partite
-  // gli id vengono recuperati tramite subquery, dato che lastID non è disponibile per SELECT
+  // ogni partita collega un utente e un torneo tramite i loro id numerici
+  // invece di scriverli a mano, l'INSERT ... SELECT li recupera cercando utente e torneo per nome (username e code)
 
   // NAVALE01 e NAVALE02 - Facile
   // alice ha vinto NAVALE01 (18 siluri, ne rimangono 5)
@@ -168,6 +175,7 @@ db.serialize(() => {
 });
 
 
+// chiude la connessione al termine e segnala eventuali errori
 db.close((err) => {
   if (err) {
     console.error(err);
