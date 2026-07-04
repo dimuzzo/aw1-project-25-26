@@ -13,7 +13,7 @@ export default function GameDao() {
         });
     }
 
-    // crea una partita (partecipazione a un torneo)
+    // crea una partita di un torneo
     this.createGame = (userId, tournamentId, torpedoesRemaining) => {
         return new Promise((resolve, reject) => {
             const query = 'INSERT INTO games (user_id, tournament_id, torpedoes_remaining, status) VALUES(?, ?, ?, ?)';
@@ -24,9 +24,10 @@ export default function GameDao() {
         });
     }
 
-    // ottieni una partita
+    // ottiene una partita con i dati del suo torneo (griglia, navi, difficoltà)
     this.getGameById = (gameId, userId) => {
         return new Promise((resolve, reject) => {
+            // il vincolo g.user_id=? fa si che un utente veda solo le proprie partite
             const query = `SELECT g.*, t.grid_size, t.ships, t.difficulty
                            FROM games g JOIN tournaments t ON g.tournament_id = t.id
                            WHERE g.id=? AND g.user_id=?`;
@@ -40,7 +41,7 @@ export default function GameDao() {
         });
     }
 
-    // cerca la partita di un utente in un dato torneo
+    // cerca la partita di un utente in un dato torneo, in modo tale da impedire che ne giochi due nello stesso torneo
     this.getGameByTournament = (userId, tournamentId) => {
         return new Promise((resolve, reject) => {
             const query = 'SELECT * FROM games WHERE user_id=? AND tournament_id=?';
@@ -51,7 +52,7 @@ export default function GameDao() {
         });
     }
 
-    // ottieni i colpi di una partita
+    // ottiene i colpi di una partita
     this.getShotsByGame = (gameId) => {
         return new Promise((resolve, reject) => {
             const query = 'SELECT row, col, result FROM shots WHERE game_id=? ORDER BY id';
@@ -62,7 +63,7 @@ export default function GameDao() {
         });
     }
 
-    // ottieni un torneo tramite codice
+    // ottiene un torneo tramite codice
     this.getTournamentByCode = (code) => {
         return new Promise((resolve, reject) => {
             const query = 'SELECT * FROM tournaments WHERE code=?';
@@ -98,9 +99,10 @@ export default function GameDao() {
         });
     }
 
-    // ottieni le statistiche di tutti i giocatori, per difficoltà
+    // ottiene le statistiche di tutti i giocatori, per difficoltà
     this.getStats = () => {
         return new Promise((resolve, reject) => {
+            // SUM(g.status='vinto') conta le partite vinte
             const query = `SELECT u.username, t.difficulty, COUNT(*) as played,
                             SUM(g.status='vinto') as won, SUM(g.status='perso') as lost
                             FROM games g
@@ -117,6 +119,7 @@ export default function GameDao() {
                     played: r.played,
                     won: r.won,
                     lost: r.lost,
+                    // percentuale di vittorie con una cifra decimale (0 se non ha ancora giocato)
                     winPct: r.played > 0 ? Math.round((r.won / r.played) * 1000) / 10 : 0
                 })));
             })

@@ -9,28 +9,22 @@ export default function UserDao() {
         return new Promise((resolve, reject) => {
             const query = 'SELECT * FROM users WHERE id=?';
             db.get(query, [id], (err, row) => {
-                if (err) {
-                    reject(err);
-                }
-                if (row === undefined) {
-                    resolve({ error: 'Utente non trovato.' });
-                } else {
-                    resolve(row);
-                }
+                if (err) reject(err);
+                if (row === undefined) resolve({ error: 'Utente non trovato.' });
+                else resolve(row);
             });
         });
     };
 
+    // verifica username e password: ritorna { id, username } se combaciano, false altrimenti
     this.getUserByCredentials = (username, password) => {
         return new Promise((resolve, reject) => {
-            const sql = 'SELECT * FROM users WHERE username=?';
-            db.get(sql, [username], (err, row) => {
-                if (err) {
-                    reject(err);
-                } else if (row === undefined) {
-                    resolve(false);
-                }
+            const query = 'SELECT * FROM users WHERE username=?';
+            db.get(query, [username], (err, row) => {
+                if (err) reject(err);
+                else if (row === undefined) resolve(false);
                 else {
+                    // solo id e username, password e salt restano sul server
                     const user = { id: row.id, username: row.username };
 
                     // controlla gli hash in modo asincrono, in modo tale da non bloccare il server
@@ -38,8 +32,7 @@ export default function UserDao() {
                         if (err) reject(err);
                         if (!crypto.timingSafeEqual(Buffer.from(row.password, 'hex'), hashedPassword))
                             resolve(false);
-                        else
-                            resolve(user);
+                        else resolve(user);
                     });
                 }
             });

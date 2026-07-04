@@ -2,23 +2,17 @@ import { useState } from "react";
 import { Row, Col, Form, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
-// info delle difficoltà, mostrate solo per orientare l'utente
-// la verità (posizioni, numeri esatti) resta sul server
-const DIFFICULTIES = {
-  Facile: { gridSize: 7, ships: 4, torpedoes: 18 },
-  Intermedio: { gridSize: 10, ships: 7, torpedoes: 28 },
-  Difficile: { gridSize: 14, ships: 12, torpedoes: 45 },
-};
-
+// pagina iniziale: si sceglie la modalità (casual o torneo) e, per la casual, la difficoltà
 function HomePage(props) {
   const navigate = useNavigate();
+  const DIFFICULTIES = props.difficulties; // info difficoltà, provengono da App (i valori veri li decide il server)
   // il selettore di difficoltà appare solo dopo aver cliccato casual
   const [showCasual, setShowCasual] = useState(false);
   // mostra l'avviso di logout dopo aver cliccato casual da autenticati
   const [casualHint, setCasualHint] = useState(false);
   // mostra l'invito al login dopo aver cliccato torneo da non autenticati
   const [torneoHint, setTorneoHint] = useState(false);
-  const [difficulty, setDifficulty] = useState("Facile");
+  const [difficulty, setDifficulty] = useState("Facile"); // difficoltà scelta per la partita casual
 
   const info = DIFFICULTIES[difficulty];
 

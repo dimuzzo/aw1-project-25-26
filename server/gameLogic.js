@@ -1,7 +1,8 @@
-/* modulo per la gestione della logica di gioco (posizionamento navi) */
+/* modulo con logica di gioco: posizionamento navi, esito siluro, aggiornamento siluri e stato partita */
 export default function placeShipsOnGrid(gridSize, shipSizes) {
     // prova fino a 1000 volte a piazzare tutte le navi
     for (let i = 0; i < 1000; i++) {
+        // griglia: 0 = cella libera, 1 = nave, 2 = margine tra navi
         const grid = new Array(gridSize).fill(0).map(() => new Array(gridSize).fill(0));
         const ships = [];
         let success = true;
@@ -30,7 +31,7 @@ export default function placeShipsOnGrid(gridSize, shipSizes) {
 }
 
 // verifica se è possibile piazzare una nave
-// la nave deve restare dentro la griglia (può toccare i bordi) e non sovrapporsi alle navi (1) né alle celle adiacenti ad esse (2)
+// la nave deve restare dentro la griglia e non sovrapporsi alle navi (1) né alle celle adiacenti ad esse (2)
 function canPlaceShip(grid, row, col, size, dir, gridSize) {
     for (let i = 0; i < size; i++) {
         if (dir === 'V') {
@@ -43,7 +44,7 @@ function canPlaceShip(grid, row, col, size, dir, gridSize) {
     return true;
 }
 
-// piazza la nave, segna le celle della nave come 1 e le celle adiacenti libere come 2 (buffer)
+// piazza la nave, segna le celle della nave come 1 e le celle adiacenti libere come 2
 function doPlaceShip(grid, row, col, size, dir, gridSize) {
     for (let i = 0; i < size; i++) {
         if (dir === 'V') {
@@ -54,7 +55,7 @@ function doPlaceShip(grid, row, col, size, dir, gridSize) {
         }
     }
 
-    // segna le celle adiacenti come 2 (buffer)
+    // segna le celle adiacenti come 2 (margine tra navi)
     for (let i = 0; i < size; i++) {
         const cellRow = dir === 'V' ? row + i : row;
         const cellCol = dir === 'V' ? col : col + i;
@@ -110,4 +111,13 @@ export function computeShotResult(ships, shots, row, col) {
     );
 
     return { result: sunk ? 'affondato' : 'colpito', won };
+}
+
+// dato l'esito di un tiro, calcola i siluri rimasti e lo stato della partita
+export function applyShot(result, won, torpedoes) {
+    const torpedoesRemaining = result === 'acqua' ? torpedoes - 1 : torpedoes;
+    let status = 'attivo';
+    if (won) status = 'vinto';
+    else if (torpedoesRemaining === 0) status = 'perso';
+    return { torpedoesRemaining, status };
 }

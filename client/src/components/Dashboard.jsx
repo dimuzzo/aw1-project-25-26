@@ -3,18 +3,12 @@ import { Row, Col, Form, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import API from "../API.js";
 
-// info delle difficoltà, mostrate solo per orientare l'utente
-const DIFFICULTIES = {
-  Facile: { gridSize: 7, ships: 4, torpedoes: 18 },
-  Intermedio: { gridSize: 10, ships: 7, torpedoes: 28 },
-  Difficile: { gridSize: 14, ships: 12, torpedoes: 45 },
-};
-
 // hub dei tornei per utenti autenticati: crea un torneo, mostrando il codice, oppure entra con un codice
-function Dashboard() {
+function Dashboard(props) {
   const navigate = useNavigate();
-  const [difficulty, setDifficulty] = useState("Facile");
-  const [code, setCode] = useState("");
+  const DIFFICULTIES = props.difficulties; // info difficoltà, arrivano da App (i valori veri li decide il server)
+  const [difficulty, setDifficulty] = useState("Facile"); // difficoltà del torneo da creare
+  const [code, setCode] = useState(""); // codice inserito per entrare nel torneo
   const [created, setCreated] = useState({}); // { code, gameId } del torneo appena creato (vuoto finché non se ne crea uno)
   const [error, setError] = useState(""); // errore locale alla pagina
 

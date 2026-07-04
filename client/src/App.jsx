@@ -21,6 +21,14 @@ function App() {
 
   const navigate = useNavigate();
 
+  // info delle difficoltà, mostrate solo per orientare l'utente
+  // la verità (posizioni, numeri esatti) resta sul server
+  const difficulties = {
+    Facile: { gridSize: 7, ships: 4, torpedoes: 18 },
+    Intermedio: { gridSize: 10, ships: 7, torpedoes: 28 },
+    Difficile: { gridSize: 14, ships: 12, torpedoes: 45 },
+  };
+
   // helper per impostare il feedback da un errore
   const setFeedbackFromError = (err) => {
     let message = "Errore Sconosciuto";
@@ -83,11 +91,11 @@ function App() {
           <Alert variant="info" dismissible onClose={() => setFeedback('')}>{feedback}</Alert>
         </Col></Row>}
         <Routes>
-          <Route path="/" element={<HomePage loggedIn={loggedIn} playCasual={playCasual} />} />
+          <Route path="/" element={<HomePage loggedIn={loggedIn} playCasual={playCasual} difficulties={difficulties} />} />
 
           <Route path="/login" element={loggedIn ? <Navigate replace to="/" /> : <LoginForm login={handleLogin} />} />
 
-          <Route path="/dashboard" element={loggedIn ? <Dashboard /> : <Navigate replace to="/" />} />
+          <Route path="/dashboard" element={loggedIn ? <Dashboard difficulties={difficulties} /> : <Navigate replace to="/" />} />
 
           <Route path="/game/:id" element={<GameBoard loggedIn={loggedIn} />} />
 

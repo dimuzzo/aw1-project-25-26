@@ -4,11 +4,11 @@ import morgan from 'morgan'; // middleware per il logging
 import cors from 'cors'; // middleware per il CORS
 import { check, validationResult } from 'express-validator'; // middleware per la validazione
 import passport from "passport"; // middleware per l'autenticazione
-import session from "express-session"; // middleware per la strategia di autenticazione
+import session from "express-session"; // middleware per la gestione delle sessioni
 import LocalStrategy from "passport-local"; // strategia di autenticazione locale
 import UserDao from "./dao-users.js"; // dao per gli utenti
 import GameDao from "./dao-games.js"; // dao per le partite
-import placeShipsOnGrid, { computeShotResult } from "./gameLogic.js"; // logica di gioco
+import placeShipsOnGrid, { computeShotResult, applyShot } from "./gameLogic.js"; // logica di gioco
 
 
 const userDao = new UserDao();
@@ -92,9 +92,11 @@ const difficultyValidation = [
   check('difficulty').isIn(['Facile', 'Intermedio', 'Difficile'])
 ];
 
+// helper che mantiene solo le dimensioni delle navi, mai le posizioni
+const sizesOnly = (ships) => ships.map(s => ({ size: s.size }));
+
 
 /* API utenti */
-
 // POST /api/sessions : login dell'utente
 app.post('/api/sessions', function (req, res, next) {
   passport.authenticate('local', function (err, user, info) {
@@ -125,7 +127,6 @@ app.delete('/api/sessions/current', (req, res) => {
 
 
 /* API partite e tornei */
-
 // POST /api/games : avvia una partita Casual (solo per utenti anonimi, stato salvato in sessione)
 app.post('/api/games', isNotLoggedIn, difficultyValidation, (req, res) => {
   const invalidFields = validationResult(req);
@@ -143,7 +144,7 @@ app.post('/api/games', isNotLoggedIn, difficultyValidation, (req, res) => {
     req.session.game = { difficulty, gridSize: config.gridSize, ships, torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' };
 
     // invia al client solo i dati non sensibili durante la partita
-    res.status(201).json({ gameId: 'casual', gridSize: config.gridSize, ships: ships.map(s => ({ size: s.size })), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
+    res.status(201).json({ gameId: 'casual', gridSize: config.gridSize, ships: sizesOnly(ships), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
   } catch (err) {
     res.status(500).json({ error: 'Errore nella creazione della partita' });
   }
@@ -162,7 +163,7 @@ app.post('/api/tournaments', isLoggedIn, difficultyValidation, async (req, res) 
     // genera la griglia e posiziona le navi
     const { ships } = placeShipsOnGrid(config.gridSize, config.shipSizes);
 
-    // genera un codice univoco di 6 caratteri maiuscoli per il torneo
+    // genera un codice casuale di 6 caratteri maiuscoli (base36 per usare cifre e lettere)
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
     // crea il torneo nel database
@@ -171,7 +172,7 @@ app.post('/api/tournaments', isLoggedIn, difficultyValidation, async (req, res) 
     // crea la partita del creatore nel database
     const gameId = await gameDao.createGame(req.user.id, tournamentId, config.torpedoes);
 
-    res.status(201).json({ code, gameId, gridSize: config.gridSize, ships: ships.map(s => ({ size: s.size })), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
+    res.status(201).json({ code, gameId, gridSize: config.gridSize, ships: sizesOnly(ships), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
   } catch (err) {
     res.status(500).json({ error: 'Errore nella creazione del torneo' });
   }
@@ -202,7 +203,7 @@ app.post('/api/tournaments/:code/join', isLoggedIn, async (req, res) => {
     // crea la partita nel database del giocatore
     const gameId = await gameDao.createGame(userId, tournament.id, config.torpedoes);
 
-    res.status(201).json({ gameId, gridSize: tournament.grid_size, ships: ships.map(s => ({ size: s.size })), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
+    res.status(201).json({ gameId, gridSize: tournament.grid_size, ships: sizesOnly(ships), torpedoesRemaining: config.torpedoes, shots: [], status: 'attivo' });
   } catch (err) {
     res.status(500).json({ error: 'Errore nell\'adesione al torneo' });
   }
@@ -220,7 +221,7 @@ app.get('/api/games/:id', async (req, res) => {
     }
     return res.json({
       gridSize: game.gridSize,
-      ships: game.ships.map(s => ({ size: s.size })),
+      ships: sizesOnly(game.ships),
       torpedoesRemaining: game.torpedoesRemaining,
       status: game.status,
       shots: game.shots
@@ -243,7 +244,7 @@ app.get('/api/games/:id', async (req, res) => {
     const ships = JSON.parse(game.ships);
     return res.json({
       gridSize: game.grid_size,
-      ships: ships.map(s => ({ size: s.size })),
+      ships: sizesOnly(ships),
       torpedoesRemaining: game.torpedoes_remaining,
       status: game.status,
       shots
@@ -285,14 +286,11 @@ app.post('/api/games/:id/shots',
       const { result, won } = computeShotResult(game.ships, game.shots, row, col);
       game.shots.push({ row, col, result });
 
-      // solo l'acqua consuma un siluro
-      if (result === 'acqua') game.torpedoesRemaining -= 1;
+      const { torpedoesRemaining, status } = applyShot(result, won, game.torpedoesRemaining);
+      game.torpedoesRemaining = torpedoesRemaining;
+      game.status = status;
 
-      // aggiorna lo stato finale della partita
-      if (won) game.status = 'vinto';
-      else if (game.torpedoesRemaining === 0) game.status = 'perso';
-
-      return res.json({ result, torpedoesRemaining: game.torpedoesRemaining, status: game.status });
+      return res.json({ result, torpedoesRemaining, status });
     }
 
     // torneo: stato nel DB, serve autenticazione e proprietà
@@ -323,13 +321,7 @@ app.post('/api/games/:id/shots',
       const ships = JSON.parse(game.ships);
       const { result, won } = computeShotResult(ships, shots, row, col);
 
-      // solo l'acqua consuma un siluro
-      const torpedoesRemaining = result === 'acqua' ? game.torpedoes_remaining - 1 : game.torpedoes_remaining;
-
-      // calcola lo stato finale della partita
-      let status = 'attivo';
-      if (won) status = 'vinto';
-      else if (torpedoesRemaining === 0) status = 'perso';
+      const { torpedoesRemaining, status } = applyShot(result, won, game.torpedoes_remaining);
 
       // salva il tiro e aggiorna la partita nel database
       await gameDao.addShot(id, row, col, result);
