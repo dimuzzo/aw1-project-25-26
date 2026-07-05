@@ -1,0 +1,151 @@
+# file per testare le API con l'estensione REST Client di Visual Studio Code.
+# le richieste vanno lanciate con il server attivo (nodemon index.js) sulla porta 3001.
+
+# NB: l'estensione conserva il cookie di sessione tra una richiesta e l'altra,
+#     quindi fare prima il login per provare le route dei tornei (autenticate),
+#     e il logout per provare la partita Casual (riservata agli utenti anonimi).
+
+
+# utenti e sessioni
+
+## login con un utente del seed (alice / alice123)
+POST http://localhost:3001/api/sessions HTTP/1.1
+content-type: application/json
+
+{
+    "username": "alice",
+    "password": "alice123"
+}
+###
+
+## verifica la sessione corrente
+GET http://localhost:3001/api/sessions/current HTTP/1.1
+###
+
+## logout
+DELETE http://localhost:3001/api/sessions/current HTTP/1.1
+###
+
+
+# partita casual (solo utenti anonimi: fare prima il logout)
+
+## crea una partita casual di livello facile
+POST http://localhost:3001/api/games HTTP/1.1
+content-type: application/json
+
+{
+    "difficulty": "Facile"
+}
+###
+
+## stato della partita casual (senza le posizioni delle navi)
+GET http://localhost:3001/api/games/casual HTTP/1.1
+###
+
+## lancia un siluro sulla partita casual
+POST http://localhost:3001/api/games/casual/shots HTTP/1.1
+content-type: application/json
+
+{
+    "row": 0,
+    "col": 0
+}
+###
+
+## posizioni delle navi della casual (rivelate solo a partita finita)
+GET http://localhost:3001/api/games/casual/ships HTTP/1.1
+###
+
+
+# tornei (solo utenti autenticati: fare prima il login)
+
+## crea un torneo di livello intermedio (risponde con il codice condivisibile)
+POST http://localhost:3001/api/tournaments HTTP/1.1
+content-type: application/json
+
+{
+    "difficulty": "Intermedio"
+}
+###
+
+## entra in un torneo esistente con il suo codice (usa charlie oppure un codice appena creato, alice e bob sono gia in tutti i tornei del seed)
+POST http://localhost:3001/api/tournaments/NAVALE01/join HTTP/1.1
+###
+
+## stato di una partita di torneo (sostituire l'id con quello ricevuto entrando)
+GET http://localhost:3001/api/games/1 HTTP/1.1
+###
+
+## lancia un siluro su una partita di torneo
+POST http://localhost:3001/api/games/1/shots HTTP/1.1
+content-type: application/json
+
+{
+    "row": 0,
+    "col": 0
+}
+###
+
+## posizioni delle navi di un torneo (rivelate solo a partita finita)
+GET http://localhost:3001/api/games/1/ships HTTP/1.1
+###
+
+
+# statistiche (pubbliche, nessun login richiesto)
+
+## statistiche di tutti i giocatori, divise per difficoltà
+GET http://localhost:3001/api/stats HTTP/1.1
+###
+
+
+# richieste errate
+
+## login con credenziali sbagliate (401)
+POST http://localhost:3001/api/sessions HTTP/1.1
+content-type: application/json
+
+{
+    "username": "alice",
+    "password": "sbagliata"
+}
+###
+
+## crea una partita casual con difficoltà non valida (422)
+POST http://localhost:3001/api/games HTTP/1.1
+content-type: application/json
+
+{
+    "difficulty": "Impossibile"
+}
+###
+
+## crea un torneo senza essere loggati (401, eseguire dopo il logout)
+POST http://localhost:3001/api/tournaments HTTP/1.1
+content-type: application/json
+
+{
+    "difficulty": "Facile"
+}
+###
+
+## entra in un torneo con un codice inesistente (404, da loggati)
+POST http://localhost:3001/api/tournaments/ZZZZZZ/join HTTP/1.1
+###
+
+## entra due volte nello stesso torneo (409, ripetere il join su un torneo gia iniziato)
+POST http://localhost:3001/api/tournaments/NAVALE01/join HTTP/1.1
+###
+
+## lancia un siluro con coordinate non valide (422)
+POST http://localhost:3001/api/games/casual/shots HTTP/1.1
+content-type: application/json
+
+{
+    "row": -1,
+    "col": "abc"
+}
+###
+
+## chiedi le posizioni delle navi a partita ancora in corso (400)
+GET http://localhost:3001/api/games/casual/ships HTTP/1.1
+###
