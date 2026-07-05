@@ -3,18 +3,18 @@ import { Form, Button, Row, Col, Alert } from "react-bootstrap";
 import { Link, useNavigate } from "react-router"
 
 export function LoginForm(props) {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [username, setUsername] = useState(""); // nome utente inserito nel form
+    const [password, setPassword] = useState(""); // password inserita nel form
+    const [error, setError] = useState(""); // eventuale messaggio di errore del login
 
     const handleSubmit = async (event) => {
-        event.preventDefault();
+        event.preventDefault(); // blocca il refresh della pagina
         const credentials = { username, password };
 
         try {
             await props.login(credentials); // login in api.js non è sincrono
         } catch {
-            setError('Credenziali non valide'); // assume un solo messaggio di errore alla volta
+            setError('Credenziali non valide'); // se il login fallisce, mostra l'errore
         }
     }
 

@@ -3,21 +3,24 @@ import { Game } from './models/Game.js';
 const SERVER_URL = 'http://localhost:3001/api';
 
 
-/* API Client - autenticazione */
-// funzione usata per fare il login, riceve le credenziali e ritorna l'utente loggato.
+/* API client - autenticazione */
+
+// funzione per fare il login, riceve le credenziali e ritorna l'utente loggato
 const logIn = async (credentials) => {
     return await fetch(SERVER_URL + '/sessions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        credentials: 'include',  // specifica che il cookie di autenticazione viene inoltrato a tutte le API autenticate.
+        // specifica che il cookie di autenticazione (sessione) deve essere inoltrato 
+        // e incluso a tutte le API autenticate
+        credentials: 'include',
         body: JSON.stringify(credentials),
     }).then(handleInvalidResponse)
         .then(response => response.json());
 };
 
-// funzione usata per verificare se l'utente è ancora loggato, ritorna le informazioni dell'utente. 
+// funzione per verificare se l'utente è ancora loggato, ritorna le informazioni dell'utente
 const getUserInfo = async () => {
     return await fetch(SERVER_URL + '/sessions/current', {
         credentials: 'include'
@@ -25,7 +28,7 @@ const getUserInfo = async () => {
         .then(response => response.json());
 };
 
-// funzione usata per distruggere la sessione corrente (eseguendo il log-out).
+// funzione per distruggere la sessione corrente (eseguendo il log-out)
 const logOut = async () => {
     return await fetch(SERVER_URL + '/sessions/current', {
         method: 'DELETE',
@@ -34,7 +37,8 @@ const logOut = async () => {
 };
 
 
-/* API Client - partite */
+/* API client - partite */
+
 // funzione per creare una partita casual, riceve la difficoltà scelta
 const createGame = async (difficulty) => {
     const response = await fetch(SERVER_URL + '/games', {
@@ -115,7 +119,7 @@ const getStats = async () => {
 
 
 /* helpers */
-// funzione usata per gestire la risposta del server, lancia un errore se la risposta non è valida
+// funzione per gestire la risposta del server, lancia un errore se la risposta non è valida
 function handleInvalidResponse(response) {
     if (!response.ok) { throw Error(response.statusText) }
     let type = response.headers.get('Content-Type');
@@ -125,7 +129,7 @@ function handleInvalidResponse(response) {
     return response;
 };
 
-// funzione usata per estrarre il messaggio d'errore dal corpo della risposta e lanciarlo
+// funzione per estrarre il messaggio d'errore dal corpo della risposta e lanciarlo
 async function throwApiError(response) {
     let errMessage;
     try {
@@ -141,7 +145,7 @@ async function throwApiError(response) {
     throw errMessage;
 };
 
-// funzione usata per mappare i dati di una partita ricevuti dal server nel modello Game.
+// funzione per mappare i dati di una partita ricevuti dal server nel modello Game
 function mapApiGameToGame(game) {
     return new Game(game.gameId, game.gridSize, game.ships, game.torpedoesRemaining, game.status, game.shots, game.code);
 }

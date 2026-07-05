@@ -1,6 +1,6 @@
 import { Row, Col, Table, Alert } from "react-bootstrap";
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import API from "../API.js";
 import Filters from "./Filters.jsx";
 
@@ -10,7 +10,7 @@ const DIFFICULTIES = ["Facile", "Intermedio", "Difficile"];
 // pagina pubblica delle statistiche
 // mostra, divise per difficoltà, le partite giocate, vinte, perse e la percentuale di vittorie di ogni giocatore
 function StatsTable() {
-  const [stats, setStats] = useState([]); // righe di statistiche ricevute dal server
+  const [stats, setStats] = useState([]); // righe delle statistiche ricevute dal server
   const [error, setError] = useState(""); // errore locale alla pagina
   const { level } = useParams(); // livello selezionato dalla barra dei filtri (undefined se "tutti i livelli")
 
@@ -21,7 +21,7 @@ function StatsTable() {
       .catch(e => setError(e));
   }, []);
 
-  // livelli da mostrare: solo quello selezionato, oppure tutti se non c'è un filtro valido nell'URL
+  // livelli da mostrare, solo quello selezionato, oppure tutti se non c'è un filtro valido nell'URL
   const shown = DIFFICULTIES.includes(level) ? [level] : DIFFICULTIES;
 
   return (
@@ -45,9 +45,9 @@ function StatsTable() {
           {/* una sezione per ogni livello da mostrare */}
           {shown.map((difficulty) =>
             <DifficultySection
-              key={difficulty}
-              difficulty={difficulty}
-              rows={stats.filter(row => row.difficulty === difficulty)}
+              key={difficulty} // chiave univoca per ogni sezione
+              difficulty={difficulty} // nome del livello
+              rows={stats.filter(row => row.difficulty === difficulty)} // statistiche relative al livello
             />
           )}
         </Col>

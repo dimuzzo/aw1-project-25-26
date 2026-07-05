@@ -1,5 +1,5 @@
 // modello dei dati di una partita lato client
-function Game(gameId, gridSize, ships, torpedoesRemaining, status, shots, code) {
+function Game(gameId, gridSize, ships, torpedoesRemaining, status, shots, code = null) {
     this.gameId = gameId;
     this.gridSize = gridSize;
     this.ships = ships; // solo le dimensioni [{ size }], mai le posizioni durante la partita

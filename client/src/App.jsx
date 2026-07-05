@@ -4,7 +4,7 @@ import './App.css';
 
 import { useEffect, useState } from 'react';
 import { Container, Row, Col, Alert } from 'react-bootstrap';
-import { Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import { Route, Routes, Navigate, useNavigate } from 'react-router';
 
 import NavHeader from "./components/NavHeader.jsx";
 import HomePage from "./components/HomePage.jsx";
@@ -15,7 +15,7 @@ import { LoginForm } from './components/AuthComponents.jsx';
 import API from "./API.js";
 
 function App() {
-  const [user, setUser] = useState({}); //
+  const [user, setUser] = useState({}); // memorizza le informazioni dell'utente loggato
   const [loggedIn, setLoggedIn] = useState(false); // indica se l'utente è loggato
   const [feedback, setFeedback] = useState(''); // memorizza il feedback da mostrare
 
@@ -81,28 +81,35 @@ function App() {
 
   return (
     <>
+      {/* barra di navigazione */}
       <NavHeader
         user={user}
         loggedIn={loggedIn}
         logout={handleLogout}
       />
       <Container fluid className="mt-3">
+        {/* messaggio di feedback (login o errori), appare se presente ed è chiudibile */}
         {feedback && <Row><Col md={12}>
           <Alert variant="info" dismissible onClose={() => setFeedback('')}>{feedback}</Alert>
         </Col></Row>}
         <Routes>
+          {/* homepage */}
           <Route path="/" element={<HomePage loggedIn={loggedIn} playCasual={playCasual} difficulties={difficulties} />} />
 
+          {/* se già loggato non ha senso rivedere il login, dunque si torna alla home */}
           <Route path="/login" element={loggedIn ? <Navigate replace to="/" /> : <LoginForm login={handleLogin} />} />
 
+          {/* route protetta la dashboard del torneo è solo per utenti loggati */}
           <Route path="/dashboard" element={loggedIn ? <Dashboard difficulties={difficulties} /> : <Navigate replace to="/" />} />
 
+          {/* casual e torneo condividono questa pagina, la guardia sul login sta dentro GameBoard */}
           <Route path="/game/:id" element={<GameBoard loggedIn={loggedIn} />} />
 
+          {/* statistiche pubbliche, con o senza filtro per livello */}
           <Route path="/stats" element={<StatsTable />} />
-
           <Route path="/stats/:level" element={<StatsTable />} />
 
+          {/* qualunque rotta sconosciuta torna alla home */}
           <Route path="*" element={<Navigate replace to="/" />} />
         </Routes>
       </Container>

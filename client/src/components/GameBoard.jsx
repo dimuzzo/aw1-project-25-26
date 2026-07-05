@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
-import { Table, Alert, Button, Row, Col } from 'react-bootstrap';
+import { useParams, Link, Navigate } from 'react-router';
+import { Table, Alert, Row, Col } from 'react-bootstrap';
 import API from '../API.js';
 import { Game } from '../models/Game.js';
 import ShipList from './ShipList.jsx';
 
 // componente della griglia di gioco, associato alla route /game/:id (vale sia per casual sia per torneo)
 function GameBoard(props) {
-    const { id } = useParams();
+    const { id } = useParams(); // id della partita dall'URL ('casual' per partite casual, numerico per i tornei)
     const [game, setGame] = useState({}); // il modello Game (oggetto vuoto finché non è caricato dal server)
     const [ships, setShips] = useState([]); // posizioni delle navi (array vuoto finché non rivelate a fine partita)
     const [error, setError] = useState(''); // errore locale alla pagina di gioco
@@ -50,15 +50,14 @@ function GameBoard(props) {
         }
     };
 
-    // se l'utente non è loggato, non può accedere alle partite di torneo
-    // e nel caso uscisse dal suo account durante una partita di torneo, viene reindirizzato alla home page
-    if (id !== 'casual' && !props.loggedIn)
-        return <Navigate replace to="/" />;
+    // le partite di torneo richiedono l'accesso, dunque senza login (o dopo un logout durante la partita) si torna alla home
+    if (id !== 'casual' && !props.loggedIn) return <Navigate replace to="/" />;
 
-    if (error)
-        return <Alert variant="danger">{error}</Alert>;
-    if (!game.gridSize)
-        return <p>Caricamento della partita...</p>;
+    // se il caricamento della partita fallisce, mostra l'errore al posto della griglia
+    if (error) return <Alert variant="danger">{error}</Alert>;
+
+    // finché la partita non viene caricata dal server, mostra un messaggio di attesa
+    if (!game.gridSize) return <p>Caricamento della partita...</p>;
 
     // insieme delle celle occupate da una nave (vuoto finché le navi non vengono rivelate a fine partita)
     const shipCells = new Set();
@@ -130,7 +129,7 @@ function GameBoard(props) {
                 {/* lista delle navi da affondare a destra, con il pulsante sotto la tabella */}
                 <Col md={4}>
                     <ShipList ships={game.ships} shots={game.shots} />
-                    {over && <Link to="/"><Button variant="primary" className="mt-3">Torna alla home</Button></Link>}
+                    {over && <Link className="btn btn-primary mt-3" to="/">Torna alla home</Link>}
                 </Col>
             </Row>
         </>

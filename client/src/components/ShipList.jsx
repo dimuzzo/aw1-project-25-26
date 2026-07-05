@@ -1,13 +1,13 @@
 import { Table } from 'react-bootstrap';
 
 // misura la dimensione di una nave affondata partendo dalla cella con esito 'affondato':
-// si espande nelle quattro direzioni contando le celle contigue già colpite. 
+// si espande nelle quattro direzioni contando le celle contigue già colpite
 // dato che le navi non sono mai adiacenti, le celle colpite vicine sono tutte della stessa nave
 function measureSunkShip(row, col, hitCells) {
     let size = 1; // la cella affondata stessa
     for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
         let r = row + dr, c = col + dc;
-        while (hitCells.has(`${r},${c}`)) {
+        while (hitCells.has(`${r},${c}`)) { // avanza finché trova celle colpite contigue
             size += 1;
             r += dr;
             c += dc;
@@ -19,7 +19,7 @@ function measureSunkShip(row, col, hitCells) {
 // calcola le dimensioni delle navi ancora da affondare:
 // parte dalla flotta completa e toglie una nave per ogni affondamento dedotto dai tiri
 function remainingSizes(ships, shots) {
-    // celle già colpite: servono per misurare le navi affondate
+    // celle già colpite, servono per misurare le navi affondate
     const hitCells = new Set(
         shots.filter(s => s.result !== 'acqua').map(s => `${s.row},${s.col}`)
     );
@@ -29,6 +29,7 @@ function remainingSizes(ships, shots) {
     for (const shot of shots) {
         if (shot.result === 'affondato') {
             const size = measureSunkShip(shot.row, shot.col, hitCells);
+            // trova una nave di quella dimensione e la toglie dall'elenco
             const index = remaining.indexOf(size);
             if (index !== -1) remaining.splice(index, 1);
         }
