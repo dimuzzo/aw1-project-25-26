@@ -79,13 +79,16 @@ function GameBoard(props) {
         }
         // cella di una nave mai colpita, mostrata solo a partita finita
         if (shipCells.has(`${row},${col}`)) return { className: 'cell cell-ship', icon: 'bi-square-fill' };
+        // cella ancora da colpire, nessun tiro e nessuna nave rivelata, resta vuota
         return { className: 'cell cell-water', icon: null };
     };
 
+    // la partita è finita quando lo stato non è più 'attivo', cioè quando è 'vinto' o 'perso'
     const over = game.status !== 'attivo';
 
     return (
         <>
+            {/* messaggio in cima quando la partita è finita (riquadro verde se si vince, rosso se si perde) */}
             {over &&
                 <Alert variant={game.status === 'vinto' ? 'success' : 'danger'}>
                     {game.status === 'vinto'
@@ -107,13 +110,16 @@ function GameBoard(props) {
                 Siluri rimasti: <strong>{game.torpedoesRemaining}</strong>
             </p>
             <Row>
-                {/* griglia a sinistra, occupa solo lo spazio che le serve */}
+                {/* griglia a sinistra */}
                 <Col md="auto">
                     <Table bordered className="game-board">
                         <tbody>
+                            {/* costruisce la griglia riga per riga: il primo ciclo genera le righe */}
                             {Array.from({ length: game.gridSize }, (_, row) =>
                                 <tr key={row}>
+                                    {/* per ogni riga il secondo ciclo genera le celle, una per colonna */}
                                     {Array.from({ length: game.gridSize }, (_, col) => {
+                                        // per ogni cella decide classe e icona in base ai tiri effettuati
                                         const { className, icon } = describeCell(row, col);
                                         return (
                                             <td key={col} className={className} onClick={() => handleShot(row, col)}>

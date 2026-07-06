@@ -37,6 +37,7 @@ app.use(cors(corsOptions));
 
 
 /* passport */
+
 // strategia di autenticazione locale (con username e password)
 passport.use(new LocalStrategy(async function verify(username, password, callback) {
   const user = await userDao.getUserByCredentials(username, password);
@@ -58,6 +59,7 @@ passport.deserializeUser(function (user, callback) {
 
 
 /* express-session */
+
 // crea una sessione
 app.use(session({
   secret: "This is a very secret information used to initialize the session!",
@@ -97,7 +99,8 @@ const sizesOnly = (ships) => ships.map(s => ({ size: s.size }));
 
 
 /* API utenti */
-// POST /api/sessions : login dell'utente
+
+// POST /api/sessions - login dell'utente
 app.post('/api/sessions', function (req, res, next) {
   passport.authenticate('local', function (err, user, info) {
     if (err) return next(err);
@@ -112,13 +115,13 @@ app.post('/api/sessions', function (req, res, next) {
   })(req, res, next);
 })
 
-// GET /api/sessions/current : verifica se l'utente è loggato
+// GET /api/sessions/current - verifica se l'utente è loggato
 app.get('/api/sessions/current', (req, res) => {
   if (req.isAuthenticated()) return res.json(req.user);
   return res.status(401).json({ error: 'Non autenticato' });
 });
 
-// DELETE /api/sessions/current : logout dell'utente
+// DELETE /api/sessions/current - logout dell'utente
 app.delete('/api/sessions/current', (req, res) => {
   req.logout(() => {
     res.end();
@@ -126,8 +129,9 @@ app.delete('/api/sessions/current', (req, res) => {
 });
 
 
-/* API partite e tornei */
-// POST /api/games : avvia una partita Casual (solo per utenti anonimi, stato salvato in sessione)
+/* API partite */
+
+// POST /api/games - avvia una partita casual (solo per utenti anonimi, stato salvato in sessione)
 app.post('/api/games', isNotLoggedIn, difficultyValidation, (req, res) => {
   const invalidFields = validationResult(req);
   if (!invalidFields.isEmpty()) {
@@ -150,7 +154,7 @@ app.post('/api/games', isNotLoggedIn, difficultyValidation, (req, res) => {
   }
 });
 
-// POST /api/tournaments : crea un torneo
+// POST /api/tournaments - crea un torneo
 app.post('/api/tournaments', isLoggedIn, difficultyValidation, async (req, res) => {
   const invalidFields = validationResult(req);
   if (!invalidFields.isEmpty()) {
@@ -166,7 +170,7 @@ app.post('/api/tournaments', isLoggedIn, difficultyValidation, async (req, res) 
     // genera un codice casuale di 6 caratteri maiuscoli (base36 per usare cifre e lettere)
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    // crea il torneo nel database
+    // crea il torneo nel database (le navi devono essere passate come stringhe JSON nel db)
     const tournamentId = await gameDao.createTournament(difficulty, config.gridSize, JSON.stringify(ships), code);
 
     // crea la partita del creatore nel database
@@ -178,7 +182,7 @@ app.post('/api/tournaments', isLoggedIn, difficultyValidation, async (req, res) 
   }
 })
 
-// POST /api/tournaments/:code/join : partecipa a un torneo
+// POST /api/tournaments/:code/join - partecipa a un torneo
 app.post('/api/tournaments/:code/join', isLoggedIn, async (req, res) => {
   const { code } = req.params;
   const { id: userId } = req.user;
@@ -209,7 +213,7 @@ app.post('/api/tournaments/:code/join', isLoggedIn, async (req, res) => {
   }
 });
 
-// GET /api/games/:id : ottieni lo stato di una partita (senza le posizioni delle navi)
+// GET /api/games/:id - ottieni lo stato di una partita (senza le posizioni delle navi)
 app.get('/api/games/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -240,7 +244,7 @@ app.get('/api/games/:id', async (req, res) => {
     }
     // i tiri vengono da una tabella separata
     const shots = await gameDao.getShotsByGame(id);
-    // le posizioni complete restano nel server: al client mando solo le dimensioni
+    // le posizioni complete restano nel server, al client vengono mandate solo le dimensioni
     const ships = JSON.parse(game.ships);
     return res.json({
       gridSize: game.grid_size,
@@ -254,7 +258,7 @@ app.get('/api/games/:id', async (req, res) => {
   }
 });
 
-// POST /api/games/:id/shots : lancia un siluro
+// POST /api/games/:id/shots - lancia un siluro
 app.post('/api/games/:id/shots',
   [check('row').isInt({ min: 0 }).toInt(), check('col').isInt({ min: 0 }).toInt()],
   async (req, res) => {
@@ -317,7 +321,7 @@ app.post('/api/games/:id/shots',
         return res.status(400).json({ error: 'Cella già colpita' });
       }
 
-      // le posizioni delle navi sono salvate come JSON nel torneo
+      // le posizioni delle navi sono salvate come stringhe JSON nel db, dunque sono da parsificare in array per usarle
       const ships = JSON.parse(game.ships);
       const { result, won } = computeShotResult(ships, shots, row, col);
 
@@ -333,7 +337,7 @@ app.post('/api/games/:id/shots',
     }
   });
 
-// GET /api/games/:id/ships : ottieni le posizioni delle navi di una partita (solo a partita finita)
+// GET /api/games/:id/ships - ottieni le posizioni delle navi di una partita (solo a partita finita)
 app.get('/api/games/:id/ships', async (req, res) => {
   const { id } = req.params;
 
@@ -363,13 +367,13 @@ app.get('/api/games/:id/ships', async (req, res) => {
     if (game.status === 'attivo') {
       return res.status(400).json({ error: 'La partita è ancora in corso' });
     }
-    return res.json(JSON.parse(game.ships));
+    return res.json(JSON.parse(game.ships)); // le navi vengono parsificate in array
   } catch (err) {
     return res.status(500).json({ error: 'Errore nel recupero delle navi' });
   }
 });
 
-// GET /api/stats : statistiche di tutti i giocatori, per difficoltà (pubbliche)
+// GET /api/stats - statistiche di tutti i giocatori, per difficoltà (pubbliche)
 app.get('/api/stats', async (req, res) => {
   try {
     const stats = await gameDao.getStats();

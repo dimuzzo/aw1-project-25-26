@@ -10,12 +10,12 @@ const logIn = async (credentials) => {
     return await fetch(SERVER_URL + '/sessions', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
         // specifica che il cookie di autenticazione (sessione) deve essere inoltrato 
         // e incluso a tutte le API autenticate
         credentials: 'include',
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(credentials)
     }).then(handleInvalidResponse)
         .then(response => response.json());
 };
@@ -44,10 +44,10 @@ const createGame = async (difficulty) => {
     const response = await fetch(SERVER_URL + '/games', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ difficulty }),
+        body: JSON.stringify({ difficulty })
     });
     if (response.ok) return mapApiGameToGame(await response.json());
     else await throwApiError(response);
@@ -58,10 +58,10 @@ const createTournament = async (difficulty) => {
     const response = await fetch(SERVER_URL + '/tournaments', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ difficulty }),
+        body: JSON.stringify({ difficulty })
     });
     if (response.ok) return mapApiGameToGame(await response.json());
     else await throwApiError(response);
@@ -71,7 +71,7 @@ const createTournament = async (difficulty) => {
 const joinTournament = async (code) => {
     const response = await fetch(SERVER_URL + `/tournaments/${code}/join`, {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'include'
     });
     if (response.ok) return mapApiGameToGame(await response.json());
     else await throwApiError(response);
@@ -80,7 +80,7 @@ const joinTournament = async (code) => {
 // funzione per ottenere lo stato di una partita (senza le posizioni delle navi), riceve l'id della partita
 const getGame = async (id) => {
     const response = await fetch(SERVER_URL + `/games/${id}`, {
-        credentials: 'include',
+        credentials: 'include'
     });
     // la risposta di questa route non include l'id della partita, quindi viene aggiunto all'argomento
     if (response.ok) return mapApiGameToGame({ ...await response.json(), gameId: id });
@@ -95,7 +95,7 @@ const fireShot = async (id, row, col) => {
             'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ row, col }),
+        body: JSON.stringify({ row, col })
     });
     if (response.ok) return await response.json();
     else await throwApiError(response);
@@ -104,7 +104,7 @@ const fireShot = async (id, row, col) => {
 // funzione per ottenere le posizioni delle navi (solo a partita finita), riceve l'id della partita
 const getShips = async (id) => {
     const response = await fetch(SERVER_URL + `/games/${id}/ships`, {
-        credentials: 'include',
+        credentials: 'include'
     });
     if (response.ok) return await response.json();
     else await throwApiError(response);
@@ -129,17 +129,18 @@ function handleInvalidResponse(response) {
     return response;
 };
 
-// funzione per estrarre il messaggio d'errore dal corpo della risposta e lanciarlo
+// funzione per estrarre il messaggio d'errore dal corpo della risposta e lanciarlo come stringa
+// il server manda due forme di errore: quelli di validazione come { validationErrors: { campo: messaggio } },
+// tutti gli altri come { error: 'messaggio' }
 async function throwApiError(response) {
     let errMessage;
     try {
         const body = await response.json();
-        // su 422 (validazione) il formato è { errors: [...] }, altrimenti { error: '...' }
-        errMessage = response.status === 422
-            ? `${body.errors[0].msg} for ${body.errors[0].path}.`
-            : body.error;
+        // se ci sono errori di validazione prende il primo messaggio,
+        // altrimenti usa il messaggio contenuto in error
+        errMessage = body.validationErrors ? Object.values(body.validationErrors)[0] : body.error;
     } catch {
-        // corpo non-JSON o vuoto, ripiega sul testo di stato HTTP
+        // corpo non in formato json o vuoto, ripiega sul testo di stato http
         errMessage = response.statusText;
     }
     throw errMessage;
