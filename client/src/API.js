@@ -82,7 +82,7 @@ const getGame = async (id) => {
     const response = await fetch(SERVER_URL + `/games/${id}`, {
         credentials: 'include'
     });
-    // la risposta di questa route non include l'id della partita, quindi viene aggiunto all'argomento
+    // la risposta di questa route non include l'id della partita, quindi lo si aggiunge prendendolo dall'argomento
     if (response.ok) return mapApiGameToGame({ ...await response.json(), gameId: id });
     else await throwApiError(response);
 };
@@ -111,6 +111,7 @@ const getShips = async (id) => {
 };
 
 // funzione per ottenere le statistiche pubbliche di tutti i giocatori, divise per difficoltà
+// unica funzione senza credentials: 'include', la route è pubblica e il cookie di sessione non serve
 const getStats = async () => {
     const response = await fetch(SERVER_URL + '/stats');
     if (response.ok) return await response.json();

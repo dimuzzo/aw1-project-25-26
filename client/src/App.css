@@ -1,5 +1,5 @@
-/* griglia di gioco: celle quadrate a dimensione fissa, con angoli arrotondati */
 .game-board {
+  /* griglia di gioco: celle quadrate a dimensione fissa, con angoli arrotondati */
   width: auto;
   table-layout: fixed;
   border-radius: 8px;
@@ -106,9 +106,9 @@
   margin-left: 2px;
 }
 
-/* statistiche, diventa bianco al passaggio del cursore */
 .stats-link {
-  color: #495057;
+  /* statistiche, bianco attenuato a riposo e pieno al passaggio del cursore */
+  color: rgba(255, 255, 255, 0.75);
   font-weight: 500;
   text-decoration: none;
   transition: color 0.2s;

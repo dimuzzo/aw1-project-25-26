@@ -28,7 +28,8 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 
-/* imposta e abilita il cross origin resource sharing (CORS) */
+/* CORS: client (5173) e server (3001) sono due origini diverse, quindi senza questo permesso
+  esplicito il browser bloccherebbe le richieste tra le due porte */
 const corsOptions = {
   origin: 'http://localhost:5173',
   credentials: true
@@ -259,6 +260,7 @@ app.get('/api/games/:id', async (req, res) => {
 });
 
 // POST /api/games/:id/shots - lancia un siluro
+// .toInt() converte le coordinate in numero, dato che computeShotResult le confronta con === e con una stringa fallirebbe
 app.post('/api/games/:id/shots',
   [check('row').isInt({ min: 0 }).toInt(), check('col').isInt({ min: 0 }).toInt()],
   async (req, res) => {

@@ -12,7 +12,7 @@ const DIFFICULTIES = ["Facile", "Intermedio", "Difficile"];
 function StatsTable() {
   const [stats, setStats] = useState([]); // righe delle statistiche ricevute dal server
   const [error, setError] = useState(""); // errore locale alla pagina
-  const { level } = useParams(); // livello selezionato dalla barra dei filtri (undefined se "tutti i livelli")
+  const { level } = useParams(); // livello selezionato dalla barra dei filtri
 
   // carica le statistiche dal server al primo caricamento della pagina
   useEffect(() => {
@@ -33,6 +33,7 @@ function StatsTable() {
         </Col>
       </Row>
 
+      {/* errore di caricamento: senza questo avviso un fallimento del server sembrerebbe "nessuna partita giocata" */}
       {error && <Alert variant="danger" dismissible onClose={() => setError("")}>{error}</Alert>}
 
       <Row>
@@ -74,6 +75,7 @@ function DifficultySection(props) {
             </tr>
           </thead>
           <tbody>
+            {/* l'ordine delle righe arriva già dalla query (ORDER BY), la key serve solo a React per riconoscere ogni riga */}
             {props.rows.map((row) =>
               <StatRow key={row.username} stat={row} />
             )}

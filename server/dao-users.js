@@ -27,7 +27,9 @@ export default function UserDao() {
                     // solo id e username, password e salt restano sul server
                     const user = { id: row.id, username: row.username };
 
-                    // controlla gli hash in modo asincrono, in modo tale da non bloccare il server
+                    // ricalcola l'hash della password inserita usando il salt dell'utente e lo confronta con quello salvato
+                    // la versione asincrona di scrypt non blocca il server durante il calcolo e timingSafeEqual
+                    // confronta i due hash in tempo costante, in modo che la durata della risposta non dia indizi ad un attaccante
                     crypto.scrypt(password, row.salt, 32, function (err, hashedPassword) {
                         if (err) reject(err);
                         if (!crypto.timingSafeEqual(Buffer.from(row.password, 'hex'), hashedPassword))

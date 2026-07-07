@@ -40,13 +40,13 @@ function App() {
 
   useEffect(() => {
     // controlla se l'utente è loggato
-    // viene eseguito solo la prima volta che la pagina viene (ri)caricata
+    // viene eseguito solo la prima volta che la pagina viene caricata
     API.getUserInfo()
       .then(user => {
         setLoggedIn(true);
         setUser(user); // info dell'utente, se è già loggato
       }).catch(e => {
-        if (loggedIn) // stampa l'errore solo se lo stato è inconsistente (cioè, se l'app era configurata per essere loggata)
+        if (loggedIn) // mostra l'errore solo se lo stato è inconsistente (cioè, se l'app era configurata per essere loggata)
           setFeedbackFromError(e);
         setLoggedIn(false);
         setUser({});

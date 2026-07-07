@@ -7,7 +7,7 @@ import ShipList from './ShipList.jsx';
 
 // componente della griglia di gioco, associato alla route /game/:id (vale sia per casual sia per torneo)
 function GameBoard(props) {
-    const { id } = useParams(); // id della partita dall'URL ('casual' per partite casual, numerico per i tornei)
+    const { id } = useParams(); // legge i parametri dinamici dell'URL, estraendo :id dalla route /game/:id ('casual' o numerico)
     const [game, setGame] = useState({}); // il modello Game (oggetto vuoto finché non è caricato dal server)
     const [ships, setShips] = useState([]); // posizioni delle navi (array vuoto finché non rivelate a fine partita)
     const [error, setError] = useState(''); // errore locale alla pagina di gioco
@@ -29,6 +29,7 @@ function GameBoard(props) {
     }, [game, id, ships]);
 
     // lancia un siluro sulla cella (row, col) e aggiorna lo stato in locale con la risposta del server
+    // non serve ricaricare la partita, l'esito lo calcola il server e la risposta contiene già tutto
     const handleShot = async (row, col) => {
         // ignora il click se la partita è finita o se la cella è già stata colpita
         if (game.status !== 'attivo') return;
@@ -36,6 +37,7 @@ function GameBoard(props) {
         try {
             const res = await API.fireShot(id, row, col); // { result, torpedoesRemaining, status }
             // ricostruisce una nuova istanza Game registrando il tiro appena risolto dal server
+            // a react serve un nuovo oggetto per rilevare il cambio di stato
             setGame(new Game(
                 game.gameId,
                 game.gridSize,
