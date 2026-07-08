@@ -59,7 +59,6 @@ function doPlaceShip(grid, row, col, size, dir, gridSize) {
             grid[row][col + i] = 1;
         }
     }
-
     // per ogni cella della nave, marca come margine le celle vicine ancora libere (diagonali comprese)
     for (let i = 0; i < size; i++) {
         const cellRow = dir === 'V' ? row + i : row;

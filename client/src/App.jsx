@@ -32,10 +32,10 @@ function App() {
   // helper per impostare il feedback da un errore
   const setFeedbackFromError = (err) => {
     let message = "Errore Sconosciuto";
-    // le API di gioco lanciano direttamente la stringa del messaggio, quelle auth un oggetto Error
+    // le API di gioco lanciano direttamente la stringa del messaggio (throwError), quelle auth un oggetto Error (handleInvalidResponse)
     if (typeof err === 'string') message = err;
     else if (err.message) message = err.message;
-    setFeedback(message); // assumendo un solo messaggio di errore alla volta
+    setFeedback(message); // il feedback mantiene un solo messaggio, questo sostituisce l'eventuale precedente
   };
 
   useEffect(() => {
@@ -46,7 +46,7 @@ function App() {
         setLoggedIn(true);
         setUser(user); // info dell'utente, se è già loggato
       }).catch(e => {
-        if (loggedIn) // mostra l'errore solo se lo stato è inconsistente (cioè, se l'app era configurata per essere loggata)
+        if (loggedIn) // sempre falso fa solo da guardia
           setFeedbackFromError(e);
         setLoggedIn(false);
         setUser({});
