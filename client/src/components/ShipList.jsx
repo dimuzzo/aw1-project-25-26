@@ -42,7 +42,7 @@ function ShipList(props) {
     const remaining = remainingSizes(props.ships, props.shots);
     return (
         <>
-            <h5>Navi da affondare ({remaining.length})</h5>
+            <h5>Navi da affondare ({remaining.length}/{props.ships.length})</h5>
             <Table borderless size="sm" className="ships-table">
                 <tbody>
                     {remaining.map((size, index) => <ShipInList key={index} size={size} />)}

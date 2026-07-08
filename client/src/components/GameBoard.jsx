@@ -71,13 +71,31 @@ function GameBoard(props) {
         }
     }
 
+    // insieme delle celle delle navi già affondate, si espande da ogni tiro 'affondato'
+    // nelle celle colpite contigue, dato che le navi non sono adiacenti tra loro
+    const hitCells = new Set(game.shots.filter(s => s.result !== 'acqua').map(s => `${s.row},${s.col}`));
+    const sunkCells = new Set();
+    for (const shot of game.shots) {
+        if (shot.result === 'affondato') {
+            sunkCells.add(`${shot.row},${shot.col}`);
+            // controllo nelle 4 direzioni, se c'è una cella colpita proseguo in quella direzione
+            // finché non trovo una cella non colpita o il bordo della griglia
+            for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+                let r = shot.row + dr, c = shot.col + dc;
+                while (hitCells.has(`${r},${c}`)) { sunkCells.add(`${r},${c}`); r += dr; c += dc; }
+            }
+        }
+    }
+
     // descrive una cella in base ai tiri e alle navi se sono state rivelate
     const describeCell = (row, col) => {
         const shot = game.shots.find(s => s.row === row && s.col === col);
         if (shot) {
             if (shot.result === 'acqua') return { className: 'cell cell-miss', icon: 'bi-droplet-fill' };
-            if (shot.result === 'colpito') return { className: 'cell cell-hit', icon: 'bi-record-circle' };
-            return { className: 'cell cell-sunk', icon: 'bi-fire' }; // affondato
+            // una cella colpita viene contrassegnata come 'affondato' se fa parte di una nave interamente affondata
+            if (sunkCells.has(`${row},${col}`)) return { className: 'cell cell-sunk', icon: 'bi-fire' };
+            // altrimenti viene contrassegnata come 'colpito'
+            return { className: 'cell cell-hit', icon: 'bi-record-circle' };
         }
         // cella di una nave mai colpita, mostrata solo a partita finita
         if (shipCells.has(`${row},${col}`)) return { className: 'cell cell-ship', icon: 'bi-square-fill' };
@@ -90,7 +108,7 @@ function GameBoard(props) {
 
     return (
         <>
-            {/* messaggio in cima quando la partita è finita (riquadro verde se si vince, rosso se si perde) */}
+            {/* mostra un messaggio in cima quando la partita è finita (riquadro verde se si vince, rosso se si perde) */}
             {over &&
                 <Alert variant={game.status === 'vinto' ? 'success' : 'danger'}>
                     {game.status === 'vinto'
@@ -98,7 +116,7 @@ function GameBoard(props) {
                         : 'Hai perso! Sfortunatamente hai esaurito tutti i siluri...'}
                 </Alert>
             }
-            {/* legenda delle celle */}
+            {/* legenda dei simboli usati nella griglia di gioco */}
             <div className="game-legend mb-2">
                 <span className="legend-item"><span className="legend-empty"></span> Da colpire</span>
                 <span className="legend-item"><i className="bi bi-droplet-fill legend-water"></i> Acqua</span>

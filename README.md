@@ -391,6 +391,6 @@ alice e bob hanno già giocato delle partite (vinte e perse). charlie non ha anc
 
 Durante lo sviluppo del progetto ho fatto un uso di uno strumento AI, che mi ha aiutato in questi tre punti:
 
-- Script per popolare il database (`db-populator.js`): mi ha aiutato a scrivere lo script che crea le tabelle e inserisce i dati iniziali (tre utenti e otto partite già giocate), in modo da poter rigenerare il database in qualsiasi momento.
+- Creazione del database: mi ha aiutato a definire lo schema delle tabelle e i dati iniziali (i tre utenti e le partite già giocate) presenti nel database consegnato.
 - Gestione della griglia di gioco (`GameBoard.jsx`): mi ha dato una mano nella parte del client che costruisce e aggiorna la griglia in base agli esiti dei tiri (acqua, colpito e affondato) e nella logica di visualizzazione.
 - Refactoring: mi ha supportato in alcune operazioni di pulizia e riorganizzazione del codice, per esempio raccogliendo porzioni ripetute in funzioni helper e uniformando lo stile del codice.

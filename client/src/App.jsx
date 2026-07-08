@@ -19,7 +19,7 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false); // indica se l'utente è loggato
   const [feedback, setFeedback] = useState(''); // memorizza il feedback da mostrare
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // navigazione tra le route
 
   // info delle difficoltà, mostrate solo per orientare l'utente
   // la verità (posizioni, numeri esatti) resta sul server

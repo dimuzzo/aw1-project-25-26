@@ -50,7 +50,7 @@ const createGame = async (difficulty) => {
         body: JSON.stringify({ difficulty })
     });
     if (response.ok) return mapApiGameToGame(await response.json());
-    else await throwApiError(response);
+    else await throwError(response);
 };
 
 // funzione per creare un torneo, riceve la difficoltà scelta e restituisce il codice del torneo
@@ -64,7 +64,7 @@ const createTournament = async (difficulty) => {
         body: JSON.stringify({ difficulty })
     });
     if (response.ok) return mapApiGameToGame(await response.json());
-    else await throwApiError(response);
+    else await throwError(response);
 };
 
 // funzione per partecipare a un torneo esistente, riceve il codice e crea la partita del giocatore
@@ -74,7 +74,7 @@ const joinTournament = async (code) => {
         credentials: 'include'
     });
     if (response.ok) return mapApiGameToGame(await response.json());
-    else await throwApiError(response);
+    else await throwError(response);
 };
 
 // funzione per ottenere lo stato di una partita (senza le posizioni delle navi), riceve l'id della partita
@@ -84,7 +84,7 @@ const getGame = async (id) => {
     });
     // la risposta di questa route non include l'id della partita, quindi lo si aggiunge prendendolo dall'argomento
     if (response.ok) return mapApiGameToGame({ ...await response.json(), gameId: id });
-    else await throwApiError(response);
+    else await throwError(response);
 };
 
 // funzione per lanciare un siluro, riceve l'id della partita e le coordinate della cella, restituisce l'esito
@@ -98,7 +98,7 @@ const fireShot = async (id, row, col) => {
         body: JSON.stringify({ row, col })
     });
     if (response.ok) return await response.json();
-    else await throwApiError(response);
+    else await throwError(response);
 };
 
 // funzione per ottenere le posizioni delle navi (solo a partita finita), riceve l'id della partita
@@ -107,7 +107,7 @@ const getShips = async (id) => {
         credentials: 'include'
     });
     if (response.ok) return await response.json();
-    else await throwApiError(response);
+    else await throwError(response);
 };
 
 // funzione per ottenere le statistiche pubbliche di tutti i giocatori, divise per difficoltà
@@ -115,7 +115,7 @@ const getShips = async (id) => {
 const getStats = async () => {
     const response = await fetch(SERVER_URL + '/stats');
     if (response.ok) return await response.json();
-    else await throwApiError(response);
+    else await throwError(response);
 };
 
 
@@ -133,7 +133,7 @@ function handleInvalidResponse(response) {
 // funzione per estrarre il messaggio d'errore dal corpo della risposta e lanciarlo come stringa
 // il server manda due forme di errore: quelli di validazione come { validationErrors: { campo: messaggio } },
 // tutti gli altri come { error: 'messaggio' }
-async function throwApiError(response) {
+async function throwError(response) {
     let errMessage;
     try {
         const body = await response.json();
@@ -141,7 +141,7 @@ async function throwApiError(response) {
         // altrimenti usa il messaggio contenuto in error
         errMessage = body.validationErrors ? Object.values(body.validationErrors)[0] : body.error;
     } catch {
-        // corpo non in formato json o vuoto, ripiega sul testo di stato http
+        // se il corpo non è json o è vuoto, usa come ripiego il testo standard dello stato http (es. 'Not Found' per un 404)
         errMessage = response.statusText;
     }
     throw errMessage;
