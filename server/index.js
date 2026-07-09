@@ -195,7 +195,7 @@ app.post('/api/tournaments/:code/join', isLoggedIn, async (req, res) => {
       return res.status(404).json({ error: 'Torneo non trovato' });
     }
 
-    // se l'utente ha già una partita in questo torneo, non viene creata un'altra
+    // se l'utente ha già una partita in questo torneo non può accedervi di nuovo
     const existing = await gameDao.getGameByTournament(userId, tournament.id);
     if (existing) {
       return res.status(409).json({ error: 'Hai già una partita in questo torneo' });

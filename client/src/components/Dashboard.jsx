@@ -3,7 +3,7 @@ import { Row, Col, Form, Button, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router";
 import API from "../API.js";
 
-// hub dei tornei per utenti autenticati: crea un torneo, mostrando il codice, oppure entra con un codice
+// pagina dei tornei per utenti autenticati: crea un torneo, mostrando il codice, oppure entra con un codice
 function Dashboard(props) {
   const navigate = useNavigate();
   const DIFFICULTIES = props.difficulties; // info difficoltà, arrivano da App (i valori veri li decide il server)

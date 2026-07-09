@@ -7,7 +7,7 @@ function measureSunkShip(row, col, hitCells) {
     let size = 1; // la cella affondata stessa
     for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
         let r = row + dr, c = col + dc;
-        while (hitCells.has(`${r},${c}`)) { // avanza finché trova celle colpite contigue
+        while (hitCells.has(`${r},${c}`)) { // avanza finché trova celle colpite vicine
             size += 1;
             r += dr;
             c += dc;
@@ -16,7 +16,7 @@ function measureSunkShip(row, col, hitCells) {
     return size;
 }
 
-// calcola le dimensioni delle navi ancora da affondare:
+// calcola le dimensioni delle navi ancora da affondare
 // parte dalla flotta completa e toglie una nave per ogni affondamento dedotto dai tiri
 function remainingSizes(ships, shots) {
     // celle già colpite, servono per misurare le navi affondate
@@ -57,7 +57,7 @@ function ShipInList(props) {
     return (
         <tr>
             <td>Nave da {props.size}</td>
-            <td>{[...Array(props.size)].map((el, index) => <i key={index} className="bi bi-square-fill ship-cell" />)}</td>
+            <td>{[...Array(props.size)].map((_, index) => <i key={index} className="bi bi-square-fill ship-cell" />)}</td>
         </tr>
     );
 }
