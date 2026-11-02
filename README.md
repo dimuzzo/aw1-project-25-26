@@ -1,4 +1,4 @@
-# Esame: "Battaglia Navale"
+# Progetto per il corso Applicazioni Web 1: "Battaglia Navale"
 
 ## Route dell'applicazione React
 
